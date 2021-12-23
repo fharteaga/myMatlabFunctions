@@ -1,0 +1,13 @@
+.DS_Store 
+Thumbs.db
+_basura/
+_infoMineduc/
+_infoMineduc
+_latexFromMatlab/_tempFiles/
+_latexFromMatlab/beamer/-tempFiles/
+_stataFromMatlab/_tempFiles/
+
+
+# Files with apiKeys
+__fromOthers/titleCaseConverter.py
+__fromOthers/plotMap.m

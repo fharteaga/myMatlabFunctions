@@ -1,0 +1,56 @@
+
+\documentclass[10pt,letterpaper]{article}
+\usepackage{helvet}
+% Tamaño de la letra puede ser 10pt, 11pt, 12pt... hoja 'letter paper', 'legal paper', etc...
+
+%\usepackage[activeacute,spanish,es-tabla,es-nolists]{babel}
+\usepackage[utf8]{inputenc}
+
+
+
+%---------------------------------------
+%% PAQUETES DE OPCIONES EXTRA
+\usepackage{booktabs}  
+             %Permite hacer tablas más formales
+\usepackage[flushleft]{threeparttable} % Agregar notes!
+\usepackage{adjustbox}  										%pa auto-size de tablas y queden justo del ancho del texto
+\usepackage{graphicx}               %Permite trabajar con gráficos
+\usepackage[capposition=top]{floatrow} % Notas para graficos
+%\usepackage{appendix}               %Permite cambiar algunas opciones de los apéndices
+%\usepackage{wrapfig}                %Permite poner graficos con texto al lado
+\usepackage{natbib}					% Biblostuff  
+%\usepackage{rotating}              %Permite hacer tablas rotadas
+\usepackage{color}                  %Permite cambiar el color del texto.. \color{green}...
+\usepackage{url}                    %Permite poner direcciones web o emails... \url{http:...}
+\usepackage{amsmath}                %Permite poner ecuaciones más fácilmente
+\usepackage{amsfonts}               %Permite usar otras fuentes típicas de ecuaciones
+%\usepackage[framed,numbered]{mcode} %Permite poner codigo Matlab \mcode{} o con \begin{lstlisting}[firstnumber=1,framerule=0.2pt]...
+% ojo que se puede hacer \lstinputlisting[firstline=6, lastline=15]{/SOME/PATH/FILENAME.M}
+%\usepackage{enumerate}              %Permite elegir el tipo de enumeracion \...enumerate}[a)][{ej} 1]
+%\usepackage{mdwlist}                %Permite poner \suspend{} - \resume{} en un enumerate, (se instala mdwtools)
+
+%\usepackage{authblk}	% Permite autores con afiliacion:
+%\author[1]{Alice Smith}
+%\author[2]{Bob Jones}
+%\affil[1]{Department of Mathematics, University X}
+%\affil[2]{Department of Biology, University Y}
+
+\usepackage{caption}
+\usepackage{subcaption} % Use "subfiguresLatex.m" to create templates 
+\usepackage{multirow}
+\usepackage{array} % Permite fijar ancho de columnas
+\newcommand{\PreserveBackslash}[1]{\let\temp=\\#1\let\\=\temp}
+\newcolumntype{C}[1]{>{\PreserveBackslash\centering}p{#1}}
+\newcolumntype{R}[1]{>{\PreserveBackslash\raggedleft}p{#1}}
+\newcolumntype{L}[1]{>{\PreserveBackslash\raggedright}p{#1}}
+%\begin{tabular}{llR{1.7cm}@{}lrR{1.7cm}@{}lR{1cm}R{1cm}R{1cm}R{1cm}R{1cm}}
+%---------------------------------------
+%% PAQUETES DE COMPATIBLIDAD CON PDF
+\usepackage[pdfcreator=Felipe,bookmarks=true,colorlinks=false]{hyperref}    % Activa links en PDFs.. tiene que ir al final
+\usepackage[all]{hypcap}                                    % Links de tablas y figuras lleva a la figura no al caption.. después de hyperref
+
+%---------------------------------------
+%% MÁRGENES
+\usepackage[margin=4cm]{geometry}
+
+\begin{document}

@@ -1,0 +1,113 @@
+
+
+\usepackage[english]{babel}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\usepackage{setspace, varioref, soul, enumerate}
+\usepackage{tikz}
+\usepackage{cancel}
+\usetikzlibrary{calc,intersections}
+\usetikzlibrary{snakes}
+%\setbeamertemplate{navigation symbols}{}
+%\usepackage{subfigure}
+\usepackage[10pt]{moresize}
+\usepackage{tabularx}
+
+\usepackage{subcaption}
+\usepackage{array,booktabs,tabularx}
+\usepackage[flushleft]{threeparttable}
+\usepackage[labelfont=bf, font=normalsize, justification=centering, belowskip=7pt, aboveskip=7pt]{caption}
+\usepackage{bbm}
+\usepackage{adjustbox}
+\usepackage{pstricks}
+\usepackage{listings}
+%\usepackage{psfrag}
+%\usepackage{auto-pst-pdf}
+
+\DeclareGraphicsExtensions{.jpg,.mps,.pdf,.png,.gif}
+\mode<beamer>
+\usefonttheme{professionalfonts}
+\usetheme{Malmoe}
+\usecolortheme{lily}
+\useoutertheme[footline=authortitle, subsection=false]{miniframes}
+%\definecolor{light-gray}{gray}{0.85}
+\setbeamersize{text margin left=1em,text margin right=1em}
+
+\newcommand{\Perp}{\perp \! \! \! \perp}
+\linespread{1}
+
+\newenvironment{stepenumerate}{\begin{enumerate}[<+->]}{\end{enumerate}}
+% \newenvironment{itemize}{\begin{itemize}[<+->]}{\end{itemize} }
+\newenvironment{stepenumeratewithalert}{\begin{enumerate}[<+-| alert@+>]}{\end{enumerate}}
+\newenvironment{itemizewithalert}{\begin{itemize}[<+-| alert@+>]}{\end{itemize} }
+
+
+
+\newcommand{\bbulletX}{\item[\textcolor{black}{$\bullet$}]}
+\newenvironment{wideitemize}{\itemize\addtolength{\itemsep}{\baselineskip}}{\enditemize}
+% \newenvironment{itemize}{\begin{itemize}[<+->]}{\end{itemize} }
+\def \bbullet {\textcolor{black}{$\bullet $ }}
+\def \rbullet {\textcolor{red}{$\bullet $ }}
+\def \gbullet {\textcolor{ao(english)}{$\bullet $ }}
+\useoutertheme{infolines}
+\useinnertheme{rectangles}
+
+
+%Parulens
+\definecolor{parula1}{rgb}{0.2422,    0.1504,    0.6603}
+\definecolor{parula2}{rgb}{0.2803,    0.2782,    0.9221}
+\definecolor{parula3}{rgb}{0.2440,    0.4358,    0.9988}
+\definecolor{parula4}{rgb}{0.1540,    0.5902,    0.9218}
+\definecolor{parula5}{rgb}{0.0297,    0.7082,    0.8163}
+\definecolor{parula6}{rgb}{0.1938,    0.7758,    0.6251}
+\definecolor{parula7}{rgb}{0.5044,    0.7993,    0.3480}
+\definecolor{parula8}{rgb}{0.8634,    0.7406,    0.1596}
+\definecolor{parula9}{rgb}{0.9892,    0.8136,    0.1885}
+\definecolor{parula10}{rgb}{0.9769,    0.9839,    0.0805}
+
+
+
+\useoutertheme{infolines}
+\useinnertheme{rectangles}
+\definecolor{link}{gray}{0.5}
+\definecolor{uchile}{rgb}{0.13,0.13,0.44}
+\definecolor{stern}{rgb}{0.34,0.02,0.55}
+\definecolor{highlight}{rgb}{0.87,0.87,0.87}
+\definecolor{cellhighlight}{rgb}{1.00,1.00,0.53}
+\definecolor{dred}{rgb}{0.68,0.00,0.00}
+\definecolor{darkgray}{gray}{0.75}
+\definecolor{lgray}{rgb}{0.85,0.85,0.85}
+\definecolor{yaleblue}{rgb}{0.0,0.28,0.57}
+\definecolor{princeton}{rgb}{0.2440,    0.4358,    0.9988}
+%\textcolor[rgb]{0.47,0.00,0.00}{}
+\setbeamercolor*{normal text}{fg=black,bg=white}
+\setbeamercolor*{alerted text}{fg=princeton}
+\setbeamercolor*{example text}{fg=princeton}
+\setbeamercolor*{structure}{fg=princeton}
+
+\setbeamerfont{alerted text}{series=\bfseries}
+
+\setbeamercolor{palette primary}{fg=black,bg=white}
+\setbeamercolor{palette secondary}{fg=white,bg=white}
+\setbeamercolor{palette tertiary}{fg=princeton,bg=white}
+\setbeamercolor{palette quaternary}{fg=princeton,bg=white}
+
+\setbeamercolor*{author in head/foot}{parent=palette quaternary}
+\setbeamercolor*{title in head/foot}{parent=palette quaternary}
+\setbeamercolor*{date in head/foot}{parent=palette quaternary}
+\setbeamercolor*{section in head/foot}{parent=palette secondary}
+\setbeamercolor*{subsection in head/foot}{parent=palette secondary}
+\setbeamercolor*{titlelike}{parent=palette tertiary}
+
+\newcounter{saveenumi}
+\newcommand{\seti}{\setcounter{saveenumi}{\value{enumi}}}
+\newcommand{\conti}{\setcounter{enumi}{\value{saveenumi}}}
+\resetcounteronoverlays{saveenumi}
+
+\setbeamertemplate{navigation symbols}{}
+
+% DEFINING COLUMNS
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}

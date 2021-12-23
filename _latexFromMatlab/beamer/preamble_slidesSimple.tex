@@ -1,0 +1,36 @@
+
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsfonts,amsthm}
+\usepackage{geometry}
+\usepackage{setspace, varioref, soul, enumerate}
+\usepackage{tikz}
+\usepackage{cancel}
+\usetikzlibrary{calc,intersections}
+\usetikzlibrary{snakes}
+%\setbeamertemplate{navigation symbols}{}
+%\usepackage{subfigure}
+\usepackage[10pt]{moresize}
+\usepackage{tabularx}
+
+\usepackage{subcaption}
+\usepackage{array,booktabs,tabularx}
+\usepackage[flushleft]{threeparttable}
+\usepackage[labelfont=bf, font=normalsize, justification=centering, belowskip=7pt, aboveskip=7pt]{caption}
+\usepackage{bbm}
+\usepackage{adjustbox}
+\usepackage{pstricks}
+%\usepackage{psfrag}
+%\usepackage{auto-pst-pdf}
+\usepackage{listings}
+
+% Esto es para que quede bien el lstlisting dentro del adjust box "someheight" regula el alto,
+\newlength\someheight
+\setlength\someheight{4cm}
+\lstset{
+  breaklines=false,
+  showspaces=true,
+}
+\makeatletter
+\def\lst@visiblespace{\lst@ttfamily{\char32} } % <-- hack
+\makeatother
