@@ -20,6 +20,10 @@ if(strcmp(pcName,'felipe'))
     tempDir='/Users/felipe/Dropbox/myMatlabFunctions/_stataFromMatlab/_tempFiles/'; % This is not mandatory
     filePreCodePath=('/Users/felipe/Dropbox/myMatlabFunctions/_stataFromMatlab/programs/preCode.do');
     stataExePath='/Applications/Stata/StataMP.app/Contents/MacOS/StataMP';
+elseif(strcmp(pcName,'ericsPcName'))
+
+    filePreCodePath=('...ERIC.../myMatlabFunctions/_stataFromMatlab/programs/preCode.do');
+    stataExePath='find_your_stata,_Eric';
 end
 
 if(isempty(tempDir)||not(exist(tempDir,'dir')==7))

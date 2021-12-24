@@ -80,7 +80,7 @@ if(withPlot)
     if(withPlotOpts)
         resP=plotRD(res,data,'subpop',subpop,'opts',plotOpts);
     else
-        resP=plotRD(res,data,subpop);
+        resP=plotRD(res,data,'subpop',subpop);
     end
     if(nargout>0)
         mergestructs = @(x,y) cell2struct([struct2cell(x);struct2cell(y)],[fieldnames(x);fieldnames(y)]);
