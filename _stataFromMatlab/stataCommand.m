@@ -3,7 +3,11 @@ function res=stataCommand(command,data,varargin)
 selectColumnsWithCode=true; % Export to stata only vars referenced in the command
 displayLog=false;
 
+% This mFile has the
+paths=pathsStata();
 
+stataProgramsPath=paths.stataProgramsPath;
+stataTempfilesPath=paths.stataTempfilesPath;
 
 % If command is a char, it includes only de stata code
 % command is a cellstr, first colum contains the id of the command
@@ -66,7 +70,7 @@ end
 
 
 %% File for eReturn
-fileResStata='/Users/felipe/Dropbox/myMatlabFunctions/_stataFromMatlab/_tempFiles/tableEReturn.csv';
+fileResStata=[stataTempfilesPath,'/tableEReturn.csv'];
 warning('off','MATLAB:DELETE:FileNotFound')
 delete(fileResStata);
 warning('on','MATLAB:DELETE:FileNotFound')
@@ -74,11 +78,11 @@ warning('on','MATLAB:DELETE:FileNotFound')
 code='';
 if(any(ismember('ereturn',typeOfReturn)))
 % Add program that reads eReturn
-code=[newline,fileread('/Users/felipe/Dropbox/myMatlabFunctions/_stataFromMatlab/programs/printLocalsEReturn.do')];
+code=[newline,fileread([stataProgramsPath,'/printLocalsEReturn.do'])];
 end
 
 if(any(ismember('return',typeOfReturn)))
-code=[newline,fileread('/Users/felipe/Dropbox/myMatlabFunctions/_stataFromMatlab/programs/printLocalsReturn.do')];
+code=[newline,fileread([stataProgramsPath,'/printLocalsReturn.do'])];
 end
 
 % Open file to save eReturn

@@ -10,32 +10,12 @@ addPreCode=true;
 assert(istable(data))
 assert(ischar(code))
 
-tempDir='';
-filePreCodePath='';
-stataExePath='';
+paths=pathsStata();
 
-pcName=char(java.lang.System.getProperty('user.name'));
-if(strcmp(pcName,'felipe'))
+tempDir=paths.stataTempfilesPath;
+filePreCodePath=[paths.stataProgramsPath,'preCode.do'];
+stataExecutablePath=paths.stataExecutablePath;
 
-    tempDir='/Users/felipe/Dropbox/myMatlabFunctions/_stataFromMatlab/_tempFiles/'; % This is not mandatory
-    filePreCodePath=('/Users/felipe/Dropbox/myMatlabFunctions/_stataFromMatlab/programs/preCode.do');
-    stataExePath='/Applications/Stata/StataMP.app/Contents/MacOS/StataMP';
-elseif(strcmp(pcName,'ericsPcName'))
-
-    filePreCodePath=('...ERIC.../myMatlabFunctions/_stataFromMatlab/programs/preCode.do');
-    stataExePath='find_your_stata,_Eric';
-end
-
-if(isempty(tempDir)||not(exist(tempDir,'dir')==7))
-tempDir = tempdir;
-end
-
-if(isempty(stataExePath)||not(exist(stataExePath,'file')==2))
-    error('Stata exectutable is not in "%s". \n\n Please change "stataExePath" on runStata.m',stataExePath)
-end
-if(isempty(filePreCodePath)||not(exist(filePreCodePath,'file')==2))
-    error('preCode.do is not in "%s". \n\n Please change "filePreCodePath" on runStata.m',filePreCodePath)
-end
 
 if(~isempty(varargin))
     
@@ -116,7 +96,7 @@ writetable(data,fdataIn,'Delimiter',',')
 
 
 fprintf('STATA is running... ');
-system([stataExePath,' -e -q do ',fcode]); % -q	suppress initialization messages
+system(['"',stataExecutablePath,'" -e -q do ',fcode]); % -q	suppress initialization messages
 % move log:
 movefile('tempDoFile.log',flog)
 % Check log
