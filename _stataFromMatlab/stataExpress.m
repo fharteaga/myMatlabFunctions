@@ -25,7 +25,8 @@ end
 showPlot=contains(code,{'plot ','rdplot ','scatter ','histogram ','hist ','binsreg ','binscatter '});
 
 if(showPlot)
-    filePlot='/Users/felipe/Dropbox/myMatlabFunctions/_stataFromMatlab/_tempFiles/tempPlot.png';
+    paths=pathsStata();
+    filePlot=[paths.stataTempfilesPath,'tempPlot.png'];
     code=sprintf('%s\n graph export "%s", replace',code,filePlot);
 end
 

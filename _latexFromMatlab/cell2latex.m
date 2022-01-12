@@ -50,6 +50,7 @@ verticalAdjustParam=2;
 addColumnNumber=false;
 withPanel=false;
 boldPanelHeader=false;
+italicPanelHeader=true;
 hlineBeforePanel=false;
 skipRowBeforePanel=true;
 withStars=false;
@@ -98,6 +99,8 @@ if(~isempty(varargin))
                 assert(iscellstr(footnote)||all(isstring(footnote),'all'));
             case {'footnotetype'}
                 footNoteType=varargin{2};
+            case{'sizefootnotefloat'}
+                sizeFootnoteFloat=varargin{2};
             case 'contopybottom'
                 withTopAndBottom=varargin{2};
             case {'incluirpvals','incluirpvalsnote'}
@@ -690,6 +693,8 @@ if(withPanel)
     end
     if(boldPanelHeader)
         bold='\textbf';
+    elseif(italicPanelHeader)
+        bold='\textit';
     else
         bold='';
     end

@@ -20,6 +20,6 @@ addpath(genpath(pathExtraFunctions));
 a=table;
 a.X=randn(1000,1);
 a.Y=a.X*2+randn(1000,1);
-a=stataCommand('reg X Y',a);
+a=stataExpress('scatter Y X',a);
 
 a.log

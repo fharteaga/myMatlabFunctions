@@ -3,7 +3,7 @@ function res=stataCommand(command,data,varargin)
 selectColumnsWithCode=true; % Export to stata only vars referenced in the command
 displayLog=false;
 
-% This mFile has the
+% This mFile has the paths related to stata
 paths=pathsStata();
 
 stataProgramsPath=paths.stataProgramsPath;

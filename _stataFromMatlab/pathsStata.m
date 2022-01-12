@@ -1,40 +1,43 @@
-function paths=pathsStata()
-
-paths=struct;
-
-pcName=char(java.lang.System.getProperty('user.name'));
-if(strcmp(pcName,'felipe'))
-
-    paths.stataProgramsPath='/Users/felipe/Dropbox/myMatlabFunctions/_stataFromMatlab/programs/';
-    paths.stataTempfilesPath='/Users/felipe/Dropbox/myMatlabFunctions/_stataFromMatlab/_tempFiles/';
-    paths.stataExecutablePath='/Applications/Stata/StataMP.app/Contents/MacOS/StataMP';
-          
-elseif(strcmp(pcName,'ericsPcName'))
+function paths=pathsStata(paths,dirToSave)
 
 
-    paths.stataProgramsPath='';
-    paths.stataTempfilesPath='';
-    paths.stataExecutablePath='';
+if(nargin==0)
+    if(exist('pathsStataSaved.mat','file')==2)
+        load('pathsStataSaved.mat','paths')
+    else
+        paths=struct;
+
+        pcName=char(java.lang.System.getProperty('user.name'));
+        if(strcmp(pcName,'felipe'))
+
+            paths.stataProgramsPath='/Users/felipe/Dropbox/myMatlabFunctions/_stataFromMatlab/programs/';
+            paths.stataTempfilesPath='/Users/felipe/Dropbox/myMatlabFunctions/_stataFromMatlab/_tempFiles/';
+            paths.stataExecutablePath='/Applications/Stata/StataMP.app/Contents/MacOS/StataMP';
+
+        elseif(strcmp(pcName,'ericsPcName'))
 
 
-elseif(strcmp(pcName,'Andrés Arteaga'))
+            paths.stataProgramsPath='';
+            paths.stataTempfilesPath='';
+            paths.stataExecutablePath='';
 
-    paths.stataProgramsPath='C:\Users\arart\Downloads/myMatlabFunctions/_stataFromMatlab/programs/';
-    paths.stataTempfilesPath='C:\Users\arart\Downloads/myMatlabFunctions/_stataFromMatlab/_tempFiles/';
-    paths.stataExecutablePath='C:\Program Files\Stata16\StataMP-64.exe';
-
-
+        else
+            error('The name "%s" is not in the list.\n Add  "elseif(strcmp(pcName,''%s'')"  and the right paths',pcName,pcName)
+        end
+    end
 else
-    error('The name "%s" is not in the list.\n Add  "elseif(strcmp(pcName,''%s'')"  and the right paths',pcName,pcName)
-end
 
+    save([dirToSave,'pathsStataSaved.mat'],'paths')
+
+end
 %
 if(not(exist(paths.stataExecutablePath,'file')==2))
-    error('Stata executable is not in "%s". \n\n Please change "paths.stataExecutablePath" on pathsStata.m',paths.stataExecutablePath)
+    paths.stataExecutablePath='asdad';
+    error('Stata executable is not in "%s". \n\n Please change "paths.stataExecutablePath" definition \n(Hint: if changing path does not work, find and erase the file  "pathsStataSaved.mat")',paths.stataExecutablePath)
 end
 if(not(exist(paths.stataProgramsPath,'file')==7))
-    error('Folder "%s" does not exist. \n\n Please change "paths.stataProgramsPath" on pathsStata.m',paths.stataProgramsPath)
+    error('Folder "%s" does not exist. \n\n Please change "paths.stataProgramsPath" definition \n(Hint: if changing path does not work, find and erase the file  "pathsStataSaved.mat")',paths.stataProgramsPath)
 end
 if(not(exist(paths.stataTempfilesPath,'file')==7))
-    error('Folder "%s" does not exist. \n\n Please change "paths.stataTempfilesPath" on pathsStata.m',paths.stataTempfilesPath)
+    error('Folder "%s" does not exist. \n\n Please change "paths.stataTempfilesPath" definition \n(Hint: if changing path does not work, find and erase the file  "pathsStataSaved.mat")',paths.stataTempfilesPath)
 end

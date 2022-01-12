@@ -2,8 +2,13 @@ function output=compileLatex(code,varargin)
 
 createTex=true;
 addPreCode=true;
-dirTex='/Users/felipe/Dropbox/myMatlabFunctions/_latexFromMatlab/_tempFiles/';
-dirPdflatex='/Library/TeX/texbin/pdflatex';
+
+paths=pathsLatex();
+latexPreTexPath=paths.latexPreTexPath;
+latexTempfilesPath=paths.latexTempfilesPath;
+latexExecutablePath=paths.latexExecutablePath;
+
+
 texFile='tempTexFile';
 
 assert(ischar(code))
@@ -16,7 +21,7 @@ if(~isempty(varargin))
             case {'addprecode'}
                 addPreCode = varargin{2};
             case {'dirtex'}
-                dirTex = varargin{2};
+                latexTempfilesPath = varargin{2};
             case {'texfile'}
                 texFile = varargin{2};
             case {'createtex'}
@@ -28,7 +33,7 @@ if(~isempty(varargin))
     end
 end
 
-ftex=[dirTex,texFile,'.tex'];
+ftex=[latexTempfilesPath,texFile,'.tex'];
 
 if(createTex)
     warning('off','MATLAB:DELETE:FileNotFound')
@@ -40,7 +45,7 @@ if(createTex)
     
     % Add program
     if(addPreCode)
-        preCode=fileread('/Users/felipe/Dropbox/myMatlabFunctions/_latexFromMatlab/preTex.txt');
+        preCode=fileread(latexPreTexPath);
         endCode=sprintf('\n\\end{document}');
     else
         preCode='';
@@ -57,7 +62,7 @@ if(createTex)
     
 end
 
-fpdf=[dirTex,texFile,'.pdf'];delete(fpdf);
+fpdf=[latexTempfilesPath,texFile,'.pdf'];delete(fpdf);
 
 %% Run PDFLatex
 %
@@ -71,7 +76,7 @@ fpdf=[dirTex,texFile,'.pdf'];delete(fpdf);
 
 fprintf('LATEX is running... ');
 % More opts with: !pdftex --help
-system(sprintf('%s -pdf -halt-on-error -output-directory=%s %s',dirPdflatex,dirTex,ftex)); %
+system(sprintf('"%s" -halt-on-error -output-directory="%s" "%s"',latexExecutablePath,latexTempfilesPath,ftex)); %
 
 
 if(isfile(fpdf))
@@ -79,9 +84,9 @@ if(isfile(fpdf))
     open(fpdf)
 end
 warning('off','MATLAB:DELETE:FileNotFound')
-delete([dirTex,texFile,'.aux'])
-delete([dirTex,texFile,'.log'])
-delete([dirTex,texFile,'.out'])
+delete([latexTempfilesPath,texFile,'.aux'])
+delete([latexTempfilesPath,texFile,'.log'])
+delete([latexTempfilesPath,texFile,'.out'])
 warning('on','MATLAB:DELETE:FileNotFound')
 
 

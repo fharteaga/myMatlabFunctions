@@ -1,6 +1,9 @@
-function a=openStataLog()
+function openStataLog()
 
-tempDir='/Users/felipe/Dropbox/myMatlabFunctions/_stataFromMatlab/_tempFiles/';
+% This mFile has the paths related to stata
+paths=pathsStata();
+
+tempDir=paths.stataTempfilesPath;
 
 flog=[tempDir,'tempDoFile.log'];
 

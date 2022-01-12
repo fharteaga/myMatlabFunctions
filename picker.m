@@ -1,20 +1,53 @@
 function [pickedAlternatives,pickedByCat,subCatOrderPick,foundTotalPerCat,totalPicked]=picker(alternatives,catAlternatives,picksPerCat,tieBreakerCats,randomTieBreakerCats,totalPicks,fillingCat)
+% RDROBUST run rdrobust command in stata 
+%   [...] = PICKER(alternatives,catAlternatives,picksPerCat,tieBreakerCats,randomTieBreakerCats,totalPicks,fillingCat)
+%   
+%   It chooses "picksPerCat" options between the "alternatives" who are
+%   classified in "catAlternatives". If there is more options per category
+%   than the desierd ones, it picks the one with lowest value on
+%   "tieBreakerCats". In case of ties, it chooses the one with lower value 
+%   on "randomTieBreakerCats". Once it picked enough options for every
+%   category, it checks if it has at least "totalPicks". If the number is
+%   not reached, then it keeps drawing from the "fillingCat" (as long as
+%   there is any available) to reach the desired quantity of options.
+%
+%% Inputs:
+%   alternatives: (any) array with the id of each alternative size(alternatives)=N;
+%   picksPerCat: (double) quantity of choices of that category, size(cantPerCat)=[Cx1];
+%   catAlternatives: (logical) matrix of dummies of alternative "i" belongs ot
+%           category "j" , size(cantPerCat)=[NxC];
+%   tieBreakerCats: (double) if there are more than one, pick the alternative with the
+%               lowest value here. Each obs has a different tieBrekear for
+%               each categorie. size(tieBreakerCats)=[NxC];
+%   randomTieBreakerCats: (double) same se the last one, but is random to choose
+%           between alternatives of the same value in tieBreakers (as distance, that
+%           might be tie-breaker, but also might be equal)
+%   totalPicks: number of desired total picks. Only if picking according
+%       "picksPerCat" results on less picks, then tries to look for more
+%       alternatives of the category defined by "fillingCat"
+%   fillingCat: (double<=C) With category uses to reach the desired picks.
+%
+%% Output:
+%   pickedAlternatives: (any) alternatives chosen, defined by the id that
+%           comes in "alternatives"
+%
+%% Optional inputs:
+%   [none]
+%
+%% Examples:
+%
+%
+%   F. Arteaga (fharteaga 'at' gmail)
+% alternatives: 
+% 
 
-% alternatives: array with the id of each alternative length(set)=N;
-% picksPerCat: quantity of choices of that category, size(cantPerCat)=C;
-% catAlternatives: matrix of dummies of alternative "i" belongs ot category "j" 
-% tieBreakerCats: if there are more than one, pick the alternative with the
-% lowest value here.
-% randomTieBreakerCats: same se the last one, but is random to choose
-% between alternatives of the same value in tieBreakers (as distance, that
-% might be tie-breaker, but also might be equal)
-% totalPicks: number of desired total picks. If only picking according
-% "picksPerCat" the resutls is less, then tries to look for more
-% alternatives of the category defined by fillingCat
+ 
+
 
 C=length(picksPerCat);
 picksPerCat=reshape(picksPerCat,[],C);
 N=length(alternatives);
+assert(all(size(alternatives)==[N,1]))
 assert(all(size(tieBreakerCats)==[N,C]))
 assert(all(size(catAlternatives)==[N,C]))
 assert(all(size(randomTieBreakerCats)==[N,C]))

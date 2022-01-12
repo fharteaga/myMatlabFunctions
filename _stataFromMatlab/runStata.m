@@ -1,6 +1,5 @@
 function out=runStata(code,data,varargin)
 
-
 openLogWhenDone=false;
 openLogIfError=false;
 getLog=false;

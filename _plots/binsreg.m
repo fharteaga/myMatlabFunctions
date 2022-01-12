@@ -1,6 +1,26 @@
 function p=binsreg(x,y,varargin)
+% BINSREG plot mean of y conditional on x
+%   P = BINSREG(x,y,varargin) 
+%   
+%
+%% Inputs:
+%   x: (numeric) dep variable
+%   y: (numeric) running variable variable
+% 
+%% Output:
+%   p: (plot?) 
+%
+%% Optional inputs:
+%   binStrategy ('quantile-spaced'): (text) defines how to construct the bins
+%        'equally-spaced' 'saturated' 'quantile-spaced' 'custom'
+%
+%% Examples:
+%  binsref(x,y)
+%
+%  See also PLOTRD
+%
+%   F. Arteaga (fharteaga 'at' gmail)
 
-% Defaults
 nBins=10;
 markerSize=50;
 removeNans=true;
@@ -155,7 +175,7 @@ switch binStrategy
     case 'quantile-spaced'
         assert(isnan(preB))
         qs=quantile(x,nBins-1);
-        
+        withEdges=true;
         %Check that there are enough dispertion on "x" to build "nBins" bins.
         while(length(unique(qs))<length(qs)&&nBins>2)
             nBins=nBins-1;
@@ -193,6 +213,7 @@ switch binStrategy
         edges=linspace(min(x),max(x),nBins+1);
         preB=discretize(x,edges,'includedEdge','left');
         nBins=length(unique(preB));
+        withEdges=true;
         
     case 'saturated'
         assert(isnan(preB))
@@ -208,6 +229,7 @@ switch binStrategy
         end
         
         nBins=length(unique(preB));
+        withEdges=false;
         
     case 'custom'
         
@@ -220,6 +242,7 @@ switch binStrategy
         uniquePreB=unique(preB);
         nBins=length(uniquePreB);
         assert(all(uniquePreB==(1:nBins)'))
+        withEdges=false;
         
 end
 
@@ -295,6 +318,10 @@ if(withQuantiles)
     
     plot(p.xvalues,p.quantileInf,'LineStyle',':','Color',areaColor*alphaEdgeArea+[1 1 1]*(1-alphaEdgeArea));
     plot(p.xvalues,p.quantileSup,'LineStyle',':','Color',areaColor*alphaEdgeArea+[1 1 1]*(1-alphaEdgeArea));
+end
+
+if(withEdges)
+p.binEdges=edges;
 end
 
 set(gca,'ygrid','on')
