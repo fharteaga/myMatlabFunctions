@@ -45,7 +45,7 @@ if(ignoreMissings)
 ignore=any(ismissing(tabla(:,vars)),2);
     if(any(ignore))
         cprintf('*systemcommand','[barmultiple.m Unofficial Warning] ')
-        cprintf('systemcommand','%.2f %% of obervations (%i of %i) are used in estimation\n',(1-mean(ignore))*100,sum(not(ignore)),length(ignore))
+        cprintf('systemcommand','%.2f %% of obervations (%i of %i) are used in the plot\n',(1-mean(ignore))*100,sum(not(ignore)),length(ignore))
         tabla=tabla(not(ignore),:);
   
     end

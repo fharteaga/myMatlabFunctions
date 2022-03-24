@@ -1,9 +1,7 @@
 function tabflow(leftvar,rightvar,varargin)
 
-% TODO:
-% Add % coditional on var1 and var2
-% Put % of var1 into a box
-% Add varLabels at the top (worth it?)
+% leftvar can be a table, then rightvar must be a set of two chars that
+% represent variables of the table
 
 withWeights=false;
 weights=[]; % Weights must be frequency weights (i.e. integers)
@@ -14,6 +12,26 @@ rightVarLabel='varR';
 precisionCondPerc='%2.2f';
 withCondN=true;
 minPercToPlot=0.05;
+maxLabelLengthFromDescription=20;
+
+    if(istable(leftvar))
+        dataAux=leftvar;
+        vars=rightvar;
+        assert(all(cellfun(@ischar,rightvar)))
+        assert(length(vars)==2)
+
+        labels=cell(2,1);
+        for v=1:length(vars)
+            labels{v}=dataAux.Properties.VariableDescriptions{vars{v}};
+            if(isempty(labels{v})||length(labels{v})>maxLabelLengthFromDescription)
+                labels{v}=vars{v};
+            end
+            leftVarLabel = labels{1};
+            rightVarLabel = labels{2};
+            leftvar=dataAux.(vars{1});
+            rightvar=dataAux.(vars{2});
+        end
+    end
 
 if(~isempty(varargin))
     varargin=checkVarargin(varargin);
@@ -44,6 +62,10 @@ if(~isempty(varargin))
         varargin(1:2) = [];
     end
 end
+
+
+
+
 
 
 

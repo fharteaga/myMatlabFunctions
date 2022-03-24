@@ -25,4 +25,5 @@ if(not(suppressMissingWarning))
         warning('There are %i missings',totalMiss)
     end
 end
+
 count=length(unique(var(not(missings))));

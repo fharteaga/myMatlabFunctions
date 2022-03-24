@@ -1,7 +1,16 @@
 function addToSystemPath(newPathOrProgram,varargin)
 
 first=true;
-pythonPath='/opt/anaconda3/bin/';
+
+pyMini='/opt/anaconda3/bin/python';
+pyMacbook='/usr/local/anaconda3/bin/python';
+if(exist(pyMini,'file')>0)
+    pythonPath=pyMini(1:length(pyMini)-7);
+else
+    pythonPath=pyMacbook(1:length(pyMacbook)-7);
+end
+
+
 latexPath='/Library/TeX/texbin/';
 localBinPath='/usr/local/bin/';
 

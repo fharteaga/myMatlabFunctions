@@ -2,33 +2,31 @@ function bartab(tabla,nameVarX,nameVarY,varargin)
 
 horz=false; % en progreso, not ready yet
 withNBar=false;
-colorHist=.3*[1 1 1];
-colorPerc=1*[1 1 1];
 minPercentageToShow=.1;
 includeAll=true;
 locLegend='';
 %binary=false;
 %binaryValue=1;
 
-if(nargin>1)
-    assert(mod(nargin-1,2)==0,'Si agregai opciones, ponle el tipo!: delimiter o stringVars')
-end
-
-% Loading optional arguments
-while ~isempty(varargin)
-    switch lower(varargin{1})
-        case 'horizontal'
-            horz = varargin{2};
-        case {'includeall','all'}
-            includeAll = varargin{2};
-                    case 'loclegend'
-            locLegend = varargin{2};
-        case {'minpercentagetoshow','mps'}
-            minPercentageToShow = varargin{2};
-        otherwise
-            error(['Unexpected option: ' varargin{1}])
+if(~isempty(varargin))
+    % This checks a few things, also if there is struct called "opts"
+    varargin=checkVarargin(varargin);
+    % Loading optional arguments
+    while ~isempty(varargin)
+        switch lower(varargin{1})
+            case 'horizontal'
+                horz = varargin{2};
+            case {'includeall','all'}
+                includeAll = varargin{2};
+            case 'loclegend'
+                locLegend = varargin{2};
+            case {'minpercentagetoshow','mps'}
+                minPercentageToShow = varargin{2};
+            otherwise
+                error(['Unexpected option: ' varargin{1}])
+        end
+        varargin(1:2) = [];
     end
-    varargin(1:2) = [];
 end
 
 
@@ -44,6 +42,11 @@ notMissX=not(ismissing(varX));
 varY=varY(notMissY&notMissX);
 varX=varX(notMissY&notMissX);
 
+if(any(not(notMissY&notMissX)))
+            cprintf('*systemcommand','[bartab.m Unofficial Warning] ')
+        cprintf('systemcommand','%.2f %% of obervations (%i of %i) are used in estimation\n',(mean(notMissY&notMissX))*100,sum((notMissY&notMissX)),length(notMissY&notMissX))
+end
+
 
 xs=unique(varX);
 cantXs=length(xs);
@@ -56,19 +59,19 @@ bart.Properties.VariableNames{'perc'}=sprintf('perc%i',1);
 bart.freq=[];
 
 for i=2:cantXs
-    
+
     [~,~,bart_aux]=tab(varY(varX==xs(i)),'withprintedoutput',0);
     bart_aux.Properties.VariableNames{'perc'}=sprintf('perc%i',i);
     bart_aux.freq=[];
     bart=outerjoin(bart,bart_aux,'keys','value','mergekeys',true);
-    
+
 end
 
 if(includeAll)
-[~,~,bart_aux]=tab(varY,'withprintedoutput',0);
-bart_aux.Properties.VariableNames{'perc'}=sprintf('percAll');
-bart_aux.freq=[];
-bart=outerjoin(bart,bart_aux,'keys','value','mergekeys',true);
+    [~,~,bart_aux]=tab(varY,'withprintedoutput',0);
+    bart_aux.Properties.VariableNames{'perc'}=sprintf('percAll');
+    bart_aux.freq=[];
+    bart=outerjoin(bart,bart_aux,'keys','value','mergekeys',true);
 end
 
 % Order bart
@@ -92,63 +95,64 @@ xsBar=categorical(xs);
 categoriesAux=categories(xsBar);
 xsBar = removecats(xsBar,categoriesAux(not(ismember(categoriesAux,xsBar))));
 if(includeAll)
-% Add category "all":
-xsBar = addcats(xsBar,'All');
-xsBar=[xsBar;categorical({'All'})];
+    % Add category "all":
+    xsBar = addcats(xsBar,'All');
+    xsBar=[xsBar;categorical({'All'})];
 end
 
 if(withNBar)
+    tiledlayout(5,1);
+    nexttile
 
-tiledlayout(5,1);
-nexttile
-
-if(horz)
-    barh(1,ones(1,height(bart))/height(bart),'stacked', 'FaceColor','flat','FaceAlpha',1,'edgeColor','none');
-    set(gca,'Visible','off')
-    box off
-else
-    [~,~,tableX]=tab(varX,'withprintedoutput',0);
-    b=bar(xsBar,[tableX.perc;1]);
-    set(gca,'xTick',[]);
-    set(gca,'yTick',[]);
-    b.FaceColor='none';
-    b.EdgeColor=colorHist;
-    
-    percX=tableX.perc;
-    for i=1:length(percX)
-        annotation2('textbox',[i,percX(i)],'N','String',sprintf('%2.1f$\\%%$',percX(i)*100),'Interpreter','latex','edgecolor','none','color',colorHist);
-    end
-    
-    annotation2('textbox',[i+1,1],'S','String',sprintf('N:%s ',mat2cellstr(length(varX),'rc',1)),'Interpreter','latex','edgecolor','none','color',colorHist);
-    box off
-end
-
-nexttile(2,[4 1])
-
-end
-
-
-if(horz)
-     if(includeAll)
-        xticksPos=1:(length(xsBar)-1);
-        xticksPos=[xticksPos,max(xticksPos)+1.4];
+    if(horz)
+        barh(1,ones(1,height(bart))/height(bart),'stacked', 'FaceColor','flat','FaceAlpha',1,'edgeColor','none');
+        set(gca,'Visible','off')
+        box off
     else
-        xticksPos=1:length(xsBar);
-     end
-    
-    br=barh(xticksPos,table2array(bart(:,2:end))','stacked', 'FaceColor','flat','FaceAlpha',0.9);
-     yticks(xticksPos)
-    yticklabels(xsBar)
- 
-else
-    
+        [~,~,tableX]=tab(varX,'withprintedoutput',0);
+        b=bar(xsBar,[tableX.perc;1]);
+        set(gca,'xTick',[]);
+        set(gca,'yTick',[]);
+        b.FaceColor='none';
+        b.EdgeColor=colorHist;
+
+        percX=tableX.perc;
+        for i=1:length(percX)
+            annotation2('textbox',[i,percX(i)],'N','String',sprintf('%2.1f$\\%%$',percX(i)*100),'Interpreter','latex','edgecolor','none','color',colorHist);
+        end
+
+        annotation2('textbox',[i+1,1],'S','String',sprintf('N:%s ',mat2cellstr(length(varX),'rc',1)),'Interpreter','latex','edgecolor','none','color',colorHist);
+        box off
+    end
+
+    nexttile(2,[4 1])
+
+end
+
+
+if(horz)
     if(includeAll)
         xticksPos=1:(length(xsBar)-1);
         xticksPos=[xticksPos,max(xticksPos)+1.4];
     else
         xticksPos=1:length(xsBar);
     end
-    
+
+    br=barh(xticksPos,table2array(bart(:,2:end))','stacked', 'FaceColor','flat','FaceAlpha',0.9,'edgeColor','none');
+    yticks(xticksPos)
+    yticklabels(xsBar)
+    set(gca, 'YDir','reverse')
+    set(gca, 'XDir','reverse')
+
+else
+
+    if(includeAll)
+        xticksPos=1:(length(xsBar)-1);
+        xticksPos=[xticksPos,max(xticksPos)+1.4];
+    else
+        xticksPos=1:length(xsBar);
+    end
+
     br=bar(xticksPos,table2array(bart(:,2:end))','stacked', 'FaceColor','flat','FaceAlpha',0.9,'edgeColor','none');
     xticks(xticksPos)
     xticklabels(xsBar)
@@ -163,7 +167,12 @@ for j=2:width(bart)
     percY=bart{:,j};
     for i=1:length(percY)
         if(percY(i)>minPercentageToShow)
+            if(horz)
+        annotation2('textbox',[sum(percY(1:(i-1)))+percY(i)/2,xticksPos(j-1)],'o','String',sprintf('%2.0f$\\%%$',percY(i)*100),'Interpreter','latex','edgecolor','none','color',colorsAnnotation(i,:));
+ 
+            else
             annotation2('textbox',[xticksPos(j-1),sum(percY(1:(i-1)))+percY(i)/2],'o','String',sprintf('%2.0f$\\%%$',percY(i)*100),'Interpreter','latex','edgecolor','none','color',colorsAnnotation(i,:));
+            end
         end
     end
 end
@@ -185,24 +194,24 @@ else
     labelVarY=nameVarY;
 end
 if(horz)
-   ylabel(labelVarX)
-xlabel('Fraction')
-set(gca,'xTick',[]); 
+    ylabel(labelVarX)
+    xlabel('Fraction')
+    set(gca,'xTick',[]);
 else
-xlabel(labelVarX)
-ylabel('Fraction')
-set(gca,'yTick',[]);
+    xlabel(labelVarX)
+    ylabel('Fraction')
+    set(gca,'yTick',[]);
 end
 
 textLegend=categorical(bart.value(end:-1:1));
 maxLength=max(cellfun(@length,categories(textLegend)));
 if(isempty(locLegend))
-if(maxLength<20)
-    locLegend='eastoutside';
-    locLegend='southoutside';
-else
-    locLegend='southoutside';
-end
+    if(maxLength<20)
+        locLegend='eastoutside';
+        locLegend='southoutside';
+    else
+        locLegend='southoutside';
+    end
 end
 
 lgd=legend(br(end:-1:1),textLegend,'location',locLegend); % southoutside eastoutside

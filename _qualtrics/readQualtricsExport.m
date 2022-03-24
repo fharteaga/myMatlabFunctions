@@ -16,6 +16,7 @@ originalQuestionNames=false;
 originalQuestionDescriptions=false;
 fileDictionary='';
 deleteAnonymousSurveys=true;
+doNotConvertToCat={};
 
 if(~isempty(varargin))
     
@@ -30,6 +31,8 @@ if(~isempty(varargin))
                 originalQuestionDescriptions= varargin{2};
             case {'filedictionary'}
                 fileDictionary= varargin{2};
+                            case {'donotconverttocat'}
+                doNotConvertToCat= varargin{2};
                 
             otherwise
                 error(['Unexpected option: ' varargin{1}])
@@ -95,7 +98,8 @@ if(exist(xlsxfile, 'file') == 2)
     end
     
     maxUniqueAnswers=20;
-    % Convert strings to categorical (if doesnt end on _text)
+    % Convert strings to categorical (if doesnt end on _text, and not is in
+   % cell doNotConvertToCat
     vars=data.Properties.VariableNames;
     charNotToCategorical=false(size(vars));
     for v=1:width(data)
@@ -105,7 +109,7 @@ if(exist(xlsxfile, 'file') == 2)
             numOrEmpty=not(contains(var,lettersPattern))|cellfun(@isempty,var);
             if(all(numOrEmpty))
                 data.(vars{v})=str2double(var);
-            else
+            elseif(not(ismember(vars{v},doNotConvertToCat)))
                 % Check if has less than maxUniqueAnswers unique values:
                 var=categorical(var);
                 if(length(categories(var))<=maxUniqueAnswers)

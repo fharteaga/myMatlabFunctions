@@ -731,21 +731,25 @@ if(incluirPValsNote||conFootnote)
     
     if(conFootnote)
 
-            preFootnote='';
+        preFootnote='';
         if(not(incluirPValsNote))
             footnote{1}=['\textit{Notes. }',footnote{1}];
         end
         if(strcmp(footNoteType,'tablenotes'))
-        footnote=sprintf('\\item %s\n', footnote{:});
+            footnote=sprintf('\\item %s\n', footnote{:});
         else
-    footnote=sprintf('%s\n', footnote{:});
+            footnote=sprintf('%s\n', footnote{:});
         end
-        
+
     else
         footnote='';
     end
     if(incluirPValsNote)
-        starPValsNote= '\item \textit{Notes. }*** p<0.01, ** p<0.05, * p<0.1.';
+        if(strcmp(footNoteType,'tablenotes'))
+            starPValsNote= '\item \textit{Notes. }*** p<0.01, ** p<0.05, * p<0.1. ';
+        else
+            starPValsNote= ' \textit{Notes. }*** p<0.01, ** p<0.05, * p<0.1. ';
+        end
     end
 
     environmentTableNotesTop='';
@@ -798,6 +802,7 @@ if(withTopAndBottom)
     end
     
     top=horzcat(newline,'\begin{table}..',positionParameter,'..',newline,...
+        '\captionsetup{justification=centering}',newline,...
         '\centering',newline,...
         tit,...
         topAdj,newline,...
@@ -812,6 +817,7 @@ if(withTopAndBottom)
     bottom=horzcat('\bottomrule',newline,...
         '..comment..\addlinespace',newline,...
         '\end{tabular}',newline,...
+        '\captionsetup{justification=justified}',newline,...
         footnoteText,...
         preFootnote,environmentTableNotesBottom,newlineFootnote,...
         botAdj,newline,...

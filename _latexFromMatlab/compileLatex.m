@@ -11,7 +11,7 @@ latexExecutablePath=paths.latexExecutablePath;
 
 texFile='tempTexFile';
 
-assert(ischar(code))
+assert(ischar(code)||isstring(code))
 
 if(~isempty(varargin))
     % Loading optional arguments

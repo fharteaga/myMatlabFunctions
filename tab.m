@@ -38,10 +38,11 @@ isNumeric=isnumeric(vector);
 isCategorical=iscategorical(vector);
 isCellstr=iscellstr(vector);
 isString=isstring(vector);
+isDatetime=isdatetime(vector);
 
 if(isNumeric||isLogical)
     vector=reshape(full(double(vector)),numel(vector),1);
-elseif(isCategorical||isCellstr||isString)
+elseif(isCategorical||isCellstr||isString||isDatetime)
     vector=reshape(vector,numel(vector),1);
     % Saca categorias no usadas
     if(isCategorical)
@@ -88,6 +89,8 @@ if(cantMissing>0&&includeMissing)
         tm.value={''};
     elseif(isString)
         tm.value={''};
+    elseif(isDatetime)
+        tm.value={'NaT'};
     end
     
     tm.freq=cantMissing;
@@ -123,11 +126,7 @@ if(N>0)
     
     if(withBarGraph)
         
-        if(not(isCategorical))
             bar(categorical(t.value),t.freq)
-        else
-            bar(t.value,t.freq)
-        end
     end
     
     

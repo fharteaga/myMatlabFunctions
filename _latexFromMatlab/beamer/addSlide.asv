@@ -6,7 +6,7 @@ slide.n=beamer.n;
 
 figures={};
 tables={};
-items={}; % Second column (optional) defines indending of the list 
+items={};
 text={};
 code={};
 codeSize='\normalsize';  % \normalsize \small \footnotesize \ \fontsize{8}{9}\selectf
@@ -59,14 +59,9 @@ for f=1:length(figures)
     figStructs{f}=fig;
 end
 
-% Check if second columns defines the indentig of the list:
 if(not(isempty(items)))
     if(size(items,2)==1)
-        items=[items,repmat({1},size(items,1),1)];
-    else
-        assert(size(items,2)==2)
-    end
-end
+        items=[items,repmat({1},size(items,1)]
 
 
 slide.fig=figStructs;

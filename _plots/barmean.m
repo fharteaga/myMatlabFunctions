@@ -13,6 +13,7 @@ colorSE=colors(2,:);
 colorBar=colors(1,:);
 colorDiffBars=.3*[1 1 1];
 dummyPrecision='%3.1f$\\%%$';
+english=true;
 
 if(~isempty(varargin))
     
@@ -35,6 +36,8 @@ if(~isempty(varargin))
                 minPValForPlottingDifference= varargin{2};
             case 'dummyprecision'
                 dummyPrecision=varargin{2};
+            case 'english'
+                english=varargin{2};
             otherwise
                 error(['Unexpected option: ' varargin{1}])
         end
@@ -50,6 +53,11 @@ if(not(testDifferencesInMean))
     plotPValDifferences=false;
 end
 
+if(english)
+    allString='All';
+else
+    allString='Todos';
+end
 
 varY=tabla.(nameVarY);
 varX=tabla.(nameVarX);
@@ -130,7 +138,7 @@ if(includeAll)
     reg=compact(fitlm(ones(length(varY),1),double(varY),'Intercept',false));
     height(cantXs+1)=reg.Coefficients.Estimate;
     radioInterval(cantXs+1)=reg.Coefficients.SE*tinv((1-alphaTest/2),reg.DFE);
-    xs=[xs;'All'];
+    xs=[xs;allString];
 end
 
 
@@ -150,12 +158,12 @@ errorbar(xticksPos,height,radioInterval,'lineStyle','none','color',colorSE)
 hold off
 
 
-minPercentageToShow=minPercentageToShow*max(height);
+minPercentageToShow=minPercentageToShow*max(abs(height));
 
 
 for i=1:(cantXs+includeAll)
     
-    if(height(i)>minPercentageToShow)
+    if(abs(height(i))>minPercentageToShow)
         if(isDummy)
             annotation2('textbox',[xticksPos(i),height(i)/2],'o','String',sprintf(dummyPrecision,height(i)*100),'Interpreter','latex','edgecolor','none','color',colorPerc);
         else

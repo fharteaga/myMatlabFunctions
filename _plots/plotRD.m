@@ -235,3 +235,4 @@ end
 res.binscatter_l=bl;
 res.binscatter_r=br;
 hold off
+hold off

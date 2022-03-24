@@ -46,6 +46,7 @@ changeXTickFormat=false;
 xTickFormat='';
 xTickThousands=false;
 export=true;
+colorspace='rgb'; % 'rgb' or 'gray'
 
 
 
@@ -99,6 +100,8 @@ while ~isempty(varargin)
             if(~isempty(externalRelativePath))
             includeExternalRelativePath=true;
             end
+        case {'colorspace'}
+            colorspace=varargin{2};
         otherwise
             error(['Unexpected option: ' varargin{1}])
     end
@@ -150,8 +153,8 @@ if(~noAxisChange)
     %set(gca_,'fontname','times')
     
     % Look for acentos:
-    in={'\''a','\''e','\''i','\''o','\''u'};
-    out={'á','é','í','ó','ú'};
+    in={'\''a','\''e','\''i','\''o','\''u','\~n'};
+    out={'á','é','í','ó','ú','ñ'};
 
     xticklabels(replace(xticklabels,[out,upper(out)],[in,upper(in)]));
     yticklabels(replace(yticklabels,[out,upper(out)],[in,upper(in)]));
@@ -184,7 +187,7 @@ if(export)
 if(not(endsWith(file,'.png')))
    file= sprintf('%s.png',file);
 end
-exportgraphics(gcf_,file,'Resolution',resolution);
+exportgraphics(gcf_,file,'Resolution',resolution,'colorspace',colorspace);
 if(displayLatex||nargout>0)
     
     

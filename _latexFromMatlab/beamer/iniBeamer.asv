@@ -4,13 +4,13 @@ function beamer=iniBeamer(varargin)
     beamerOpts.title=title;
     beamerOpts.titleShort=titleShort;
     beamerOpts.author=author;
-    beamerOpts.authorShort=authorShort;
     beamerOpts.dir=dir;
+    beamerOpts.file=file;
+    beamerOpts.authorShort=authorShort;
     beamerOpts.date=date;
     beamerOpts.dateShort=dateShort;
-    % beamerOpts.file=file; % Default "beamer"
-    % beamerOpts.dirFigures=dirFigures; % Default is "figures" folder inside dir.
-    % beamerOpts.dirTables=dirTables; % Default is "tables" folder inside dir.
+    beamerOpts.dirFigures=dirFigures;
+    beamerOpts.dirTables=dirTables;
     beamer=iniBeamer('opts',beamerOpts);
 %}
 
@@ -45,19 +45,8 @@ if(~isempty(varargin))
     end
 end
 
-
-
-if(isempty(dirFigures))
-    dirFigures=[dir,'/figures/'];
-end
-if(isempty(dirFigures))
-    dirTables=[dir,'/tables/'];
-end
-% create dirFigures:
-mkdir(dirFigures);
-% create dirTables:
-mkdir(dirTables);
-
+dirFigures=[dir,'figures/'];
+dirTables=[dir,'tables/'];
 
 beamer=struct;
 beamer.n=0;
@@ -73,6 +62,18 @@ beamer.dirTables=dirTables;
 beamer.authorShort=authorShort;
 beamer.date=date;
 beamer.dateShort=dateShort;
+
+if(isempty(dirFigures))
+    dirFigures=[dir,'/figures/'];
+end
+if(isempty(dirFigures))
+    dirFigures=[dir,'/figures/'];
+end
+% create dirFigures:
+mkdir(dirFigures);
+% create dirTables:
+mkdir(dirTables);
+
 
 % copy preamble
 copyfile('/Users/felipe/Dropbox/myMatlabFunctions/_latexFromMatlab/beamer/preamble_slidesSimple.tex',[dir,'preamble.tex']);

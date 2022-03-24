@@ -86,6 +86,6 @@ if(withPlot)
         mergestructs = @(x,y) cell2struct([struct2cell(x);struct2cell(y)],[fieldnames(x);fieldnames(y)]);
         res=mergestructs(res,resP);
     end
-    
+    hold off
 end
 

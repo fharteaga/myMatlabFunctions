@@ -203,9 +203,10 @@ end
 subsetToCollapse=dataToCollapse(:,varsNameToCollapse);
 subsetToCollapse.Properties.VariableNames=newNames;
 
-categoriesCell=cell(cantVars,3);
-categoriesStats={'first','second','third','last','count'};
+categoriesCell=cell(cantVars,4);
+categoriesStats={'first','second','third','last'};
 categoriesOrdinalStats={'max','min'};
+categoriesStatsDoNotConvertBack={'count','countunique','countmissing'};
 
 
 % Check that all are doubles, if not table2array deja la caga (cuando
@@ -225,14 +226,15 @@ for j=1:cantVars
             
             if(iscategorical(test))
                 if(isordinal(test))
-                    assert(ismember(whichstats{j},[categoriesStats,categoriesOrdinalStats])||strcmp(whichstats{j}(1:2),'c_')||strcmp(whichstats{j}(1:2),'po'),sprintf('Sorry, %s is categorical, and cannot perform %s!',varsNameToCollapse{j},whichstats{j}) )
+                    assert(ismember(whichstats{j},[categoriesStats,categoriesOrdinalStats,categoriesStatsDoNotConvertBack])||strcmp(whichstats{j}(1:2),'c_')||strcmp(whichstats{j}(1:2),'po'),sprintf('Sorry, %s is categorical, and cannot perform %s!',varsNameToCollapse{j},whichstats{j}) )
                 else
-                    assert(ismember(whichstats{j},categoriesStats)||strcmp(whichstats{j}(1:2),'c_')||strcmp(whichstats{j}(1:2),'po'),sprintf('Sorry, %s is categorical (not ordinal), and cannot perform %s!',varsNameToCollapse{j},whichstats{j}))
+                    assert(ismember(whichstats{j},[categoriesStats,categoriesStatsDoNotConvertBack])||strcmp(whichstats{j}(1:2),'c_')||strcmp(whichstats{j}(1:2),'po'),sprintf('Sorry, %s is categorical (not ordinal), and cannot perform %s!',varsNameToCollapse{j},whichstats{j}))
                 end
                 
                 categoriesCell{j,1}=1:length(categories(test));
                 categoriesCell{j,2}=categories(test);
                 categoriesCell{j,3}=isordinal(test);
+                categoriesCell{j,4}=not(ismember(whichstats{j},categoriesStatsDoNotConvertBack));
             else
                 cprintf('*systemcommand','[stataCollapse.m Unofficial Warning] ')
                 cprintf('systemcommand','Varible %s is a %s (not a double), it is being converted!\n',varsNameToCollapse{j},class(test))
@@ -292,7 +294,7 @@ dataCollapsed.auxSort___=[];
 
 for c=1:cantVars
     % Convert back categorical values:
-    if(not(isempty(categoriesCell{c,1})))
+    if(not(isempty(categoriesCell{c,1}))&&categoriesCell{c,4})
         dataCollapsed.(newNames{c})=categorical(varCollapsed(:,c),categoriesCell{c,1},categoriesCell{c,2},'ordinal',categoriesCell{c,3});
         
     else

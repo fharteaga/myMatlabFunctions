@@ -119,8 +119,10 @@ for c=1:cantVars
                 funC{c}=@(x)sum(not(isnan(x)));
             case 'countnan'
                 funC{c}=@(x)sum(isnan(x));
+            case 'countmissing'
+                funC{c}=@(x)sum(ismissing(x));
             case 'countunique'
-                funC{c}=@(x)length(unique(x))-sum(isnan(x));
+                funC{c}=@(x)length(unique(x))-sum(ismissing(x));
             case 'second'
                 funC{c}=@(x)getValueInPos(x,2,true);
             case 'third'
