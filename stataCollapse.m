@@ -189,8 +189,7 @@ else % If there are multiple idVars
     
     % Create dataset to make the merge multiple id to one
     
-    
-    
+
     dataToCollapse=outerjoin(dataToCollapse,dataAux,'keys',idVarName,'mergeKeys',true,'type','left');
     
     dataToCollapse=sortrows(dataToCollapse,'auxSort__');
@@ -215,8 +214,10 @@ categoriesStatsDoNotConvertBack={'count','countunique','countmissing'};
 isCell=false(cantVars,1);
 
 for j=1:cantVars
-    test=subsetToCollapse{:,j}(1);
-    if(islogical(test)||isnumeric(test)||iscategorical(test))
+    test=subsetToCollapse{:,j}(1,1);
+    isColumn=size(subsetToCollapse{:,j}(1,:),2)==1;
+     % Check that is a column vector and logical, numeric or categorical
+    if(isColumn&&(islogical(test)||isnumeric(test)||iscategorical(test)))
         if(not(isa(test,'double')))
             
             
@@ -242,6 +243,15 @@ for j=1:cantVars
         end
     else
         isCell(j)=true;
+
+
+        % Convert to cell if is not column and not cell
+        if(not(isColumn)&&not(iscell(test)))
+            
+             cprintf('systemcommand','Varible %s is not a column vector, it is being converted to cells that contain the vector of obs per each observation!\n',varsNameToCollapse{j})
+            subsetToCollapse.(newNames{j})=mat2cell(subsetToCollapse{:,j},ones(size(subsetToCollapse{:,j},1),1),size(subsetToCollapse{:,j},2));
+        end
+
     end
 end
 

@@ -54,10 +54,18 @@ numericVars=all(numericVar);
 
 if(cantVars==1)
     colors=linspecerGrayproof(cantVars,'dispersion',0.2);
-else
+elseif(cantVars==2)
     grey=[1 1 1]*.3;
     colors=linspecerGrayproof(cantVars-1,'dispersion',0.2);
     colors=[colors(1,:);grey;colors(2:end,:)];
+else
+%     grey=[1 1 1]*.3;
+%     colors=linspecerGrayproof(cantVars-1,'dispersion',0.2);
+%     colors=[grey;colors(1:end,:)];
+
+    colors=linspecerGrayproof(cantVars,'dispersion',0.2);
+    
+
 end
 
 
@@ -66,10 +74,20 @@ end
 % Others vars are transparent with non-white and thick borders. First is
 % dark grey
 
-alpha=[.4;zeros(cantVars-1,1)];
-edgealpha=[.4;ones(cantVars-1,1)]; % Edge of first var has to be visible to distinguish between columns
+if(cantVars<2)
+    overlap=true;
+    alpha=[.4;zeros(cantVars-1,1)];
+    edgealpha=[.4;ones(cantVars-1,1)]; % Edge of first var has to be visible to distinguish between columns
+    edgeWidth=[.1;ones(cantVars-1,1)];
+else
+    overlap=false;
+    alpha=zeros(cantVars,1);
+    edgealpha=ones(cantVars,1); % Edge of first var has to be visible to distinguish between columns
+    edgeWidth=ones(cantVars,1);
+end
 
-edgeWidth=[.1;ones(cantVars-1,1)];
+
+
 
 
 edgeBinColor_inInput=false;
@@ -105,6 +123,8 @@ if(~isempty(varargin))
                 varLabels = varargin{2};
             case 'colors'
                 colors = varargin{2};
+            case 'overlap'
+                overlap = varargin{2};
             case 'poscoeffs'
                 posCoeffs=varargin{2};
             case 'smartposcoef'
@@ -152,7 +172,12 @@ if(not(numericVar))
 end
 
 if(not(edgeBinColor_inInput))
-    edgeBinColor=[[1 1 1];colors(2:end,:)];
+    
+    if(cantVars>2)
+        edgeBinColor=colors;
+    else
+        edgeBinColor=[[1 1 1];colors(2:end,:)];
+    end
 end
 
 assert(withHistogram||withKernelDensity)
@@ -210,6 +235,8 @@ fKernel=cell(cantVars,1);
 maxValueHist=nan;
 maxValueKernel=nan;
 
+N=cell(cantVars,1);
+
 for v=1:cantVars
     var=vars{v};
 
@@ -217,12 +244,23 @@ for v=1:cantVars
     % histogram
     if(withHistogram)
         if(numericVars)
-            hists{v}= histogram(var,bins,'facecolor',colors(v,:),'facealpha',alpha(v),'edgecolor',edgeBinColor(v,:),'edgealpha',edgealpha(v),'normalization',normalization,'lineWidth',edgeWidth(v),'linestyle',edgeLinestyle{v});
+            if(overlap)
+                hists{v}= histogram(var,bins,'facecolor',colors(v,:),'facealpha',alpha(v),'edgecolor',edgeBinColor(v,:),'edgealpha',edgealpha(v),'normalization',normalization,'lineWidth',edgeWidth(v),'linestyle',edgeLinestyle{v});
+            else
+
+                Naux=histcounts(var,bins,'normalization',normalization);
+                N{v}=Naux';
+
+            end
         else
             hists{v}= histogram(var,'facecolor',colors(v,:),'facealpha',alpha(v),'edgecolor',edgeBinColor(v,:),'edgealpha',edgealpha(v),'normalization',normalization,'lineWidth',edgeWidth(v),'linestyle',edgeLinestyle{v});
 
         end
-        maxValueHist=max(maxValueHist,max(hists{v}.Values));
+        if(overlap)
+            maxValueHist=max(maxValueHist,max(hists{v}.Values));
+        else
+            maxValueHist=max(maxValueHist,max([N{:}],[],'all'));
+        end
     end
     hold on
 
@@ -236,6 +274,25 @@ for v=1:cantVars
     if(withKernelDensity)
         [fKernel{v},xKernel{v}]=ksdensity(var);
         maxValueKernel=max(maxValueKernel,max(fKernel{v}));
+
+    end
+end
+
+if(not(overlap))
+    histscBar=bar(bins(1:end-1)',[N{:}],'histc');
+    space=max(1,round(length(bins)/5));
+    set(gca,'XTick',bins(1:space:end));
+    
+
+    for v=1:cantVars
+        histscBar(v).FaceColor=colors(v,:);
+        %histscBar(v).FaceAlpha=alpha(v);
+        histscBar(v).FaceAlpha=.8;
+        histscBar(v).EdgeColor=edgeBinColor(v,:);
+        %histscBar(v).EdgeAlpha=edgealpha(v);
+        histscBar(v).EdgeAlpha=0;
+        histscBar(v).LineWidth=edgeWidth(v);
+        histscBar(v).LineStyle=edgeLinestyle{v};
 
     end
 end
@@ -412,7 +469,11 @@ if(not(isempty(varLabels))&&not(isempty(varLabels{1})))
     else
         locLeg='northeast';
     end
+    if(overlap)
     legend([hists{:}],varLabels,'interpreter','latex','location',locLeg);
+    else
+    legend(histscBar,varLabels,'interpreter','latex','location',locLeg);
+    end
 end
 
 if(withKernelDensity&&kernelWithDifferentAxis)

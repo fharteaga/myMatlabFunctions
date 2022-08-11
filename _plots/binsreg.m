@@ -1,14 +1,14 @@
 function p=binsreg(x,y,varargin)
 % BINSREG plot mean of y conditional on x
-%   P = BINSREG(x,y,varargin) 
-%   
+%   P = BINSREG(x,y,varargin)
+%
 %
 %% Inputs:
-%   x: (numeric) dep variable
-%   y: (numeric) running variable variable
-% 
+%   x: (numeric) indep variable
+%   y: (numeric) dep variable
+%
 %% Output:
-%   p: (plot?) 
+%   p: (plot?)
 %
 %% Optional inputs:
 %   binStrategy ('quantile-spaced'): (text) defines how to construct the bins
@@ -42,19 +42,20 @@ withQuantiles=false;
 withIQRange=false;
 quantileInf=.25;
 quantileSup=.75;
-modifyXTicks=true;
+modifyXTicks=false; % Put the values of the quantiles
 
 
 
 posCoeffFit=[.60 .80 .1 .1];
 markerEdgeColor=linspecer(1);
+markerFaceColor=linspecer(1);
+markerFaceAlpha=.1;
 fitColor=linspecer(1);
 areaColor=linspecer(1);
 alphaEdgeArea=.4;
 marker='o';
 xlab='';
 ylab='';
-yLims=[-2 4]; % nan if do not set
 yLims=nan;
 w=ones(size(y));
 
@@ -63,12 +64,9 @@ preB=nan; % This is the bin id for the "custom" binStrategy
 assert(length(x)==length(y),'Vectors must have the same size')
 
 if(~isempty(varargin))
-    assert(mod(length(varargin),2)==0,'Si agregai opciones, ponle el tipo!')
-    
-    
-    % Check that there is no duplicate option:
-    assert(length(unique(varargin(1:2:end)))==length(varargin(1:2:end)),'There is one option duplicated in varargin')
-    % Loading optional arguments
+
+    % This checks a few things, including if there is a struct called "opts"
+    varargin=checkVarargin(varargin);
     while ~isempty(varargin)
         switch lower(varargin{1})
             case {'w','weight'}
@@ -89,6 +87,7 @@ if(~isempty(varargin))
                 areaColor = varargin{2};
             case {'colorall'}
                 markerEdgeColor = varargin{2};
+                markerFaceColor=varargin{2};
                 fitColor = varargin{2};
                 areaColor = varargin{2};
             case {'modifyxticks'}
@@ -103,8 +102,8 @@ if(~isempty(varargin))
                 withIQRange=varargin{2};
             case {'plotquantiles','withquantiles'}
                 withQuantiles=varargin{2};
-            case {'quantiles'} % This in case you are reporting an estimate from different bandwidht that the plot (that usually is full bandwidth)
-              
+            case {'quantiles'}
+
                 assert(isnumeric(varargin{2}))
                 assert(numel(varargin{2})==2)
                 assert(all(varargin{2}>=0&varargin{2}<=1))
@@ -116,7 +115,7 @@ if(~isempty(varargin))
                     quantileSup=varargin{2}(1);
                 else
                     error('One quantile has to be strictly greater than the other one')
-                end 
+                end
             case {'ws','withscatter'}
                 withScatter = varargin{2};
             case {'poscoefffit'}
@@ -138,7 +137,6 @@ if(withIQRange)
     quantileSup=.75;
 end
 
-
 p=struct;
 if(removeNans)
     remove=any(isnan([x,y]),2);
@@ -151,8 +149,7 @@ if(removeNans)
         assert(all(not(isnan(w))))
     end
 end
-
-
+p.obsN=length(x);
 
 nBinsOrig=nBins;
 assert(size(y,1)==size(x,1))
@@ -186,8 +183,8 @@ switch binStrategy
         %             nBins=cantUniqueX;
         %             qs=quantile(x,nBins-1);
         %         end
-        
-        
+
+
         leftEdgeIncluded=true;
         edges=[min(x),qs,max(x)];
         if(qs(1)==min(x))
@@ -200,56 +197,59 @@ switch binStrategy
         else
             preB=discretize(x,edges,'includedEdge','left');
         end
-        
+
         if(nBins<nBinsOrig)
-            
+
             cprintf('*systemcommand','[binsreg.m Unofficial Warning] ')
             cprintf('systemcommand','Not enough dispertion in x to get %i bins. %i bins are used instead!\n',nBinsOrig,nBins)
         end
-        
+
     case 'equally-spaced'
         assert(isnan(preB))
         leftEdgeIncluded=true;
         edges=linspace(min(x),max(x),nBins+1);
         preB=discretize(x,edges,'includedEdge','left');
-        nBins=length(unique(preB));
+
         withEdges=true;
-        
+
     case 'saturated'
         assert(isnan(preB))
         leftEdgeIncluded=true;
-        
+
         if(length(uniqueX)>max(nBins,30))
             error('Estay seguro que queri plotear más de 30 obs?');
         end
-        
+
         preB=nan(size(x));
         for i=1:length(uniqueX)
             preB(x==uniqueX(i))=i;
         end
-        
-        nBins=length(unique(preB));
+
+
         withEdges=false;
-        
+
     case 'custom'
-        
+
         if(any(remove))
             preB=preB(not(remove));
         end
         assert(all(not(isnan(preB))))
-        
-        assert(all(size(preB)==size(y)))
-        uniquePreB=unique(preB);
-        nBins=length(uniquePreB);
-        assert(all(uniquePreB==(1:nBins)'))
-        withEdges=false;
-        
-end
 
+        assert(all(size(preB)==size(y)))
+
+
+        withEdges=false;
+    otherwise
+        error('There is not a bin strategy called "%s"',binStrategy)
+
+end
+uniquePreB=unique(preB);
+nBins=length(uniquePreB);
+p.nBins=nBins;
 %% Non-parametric E[Y|x]
 b=nan(size(x,1),nBins);
 for i=1:nBins
-    b(:,i)=preB==i;
+    b(:,i)=preB==uniquePreB(i);
 end
 binsWithObs=sum(b,1)>0;
 % Non paremetric regression (binscatter)
@@ -265,17 +265,16 @@ if(size(controls,2)==0)
     p.quantileSup=nan(nBins,1);
 
     for j=1:nBins
-        
+
         p.quantileInf(j)=quantile(y(b_withObs(:,j)==1),quantileInf);
         p.quantileSup(j)=quantile(y(b_withObs(:,j)==1),quantileSup);
-        
+
     end
-    
+
 end
 
 
-
-% Paremetric regression (linear fit)
+%% Paremetric regression (linear fit)
 
 parReg=fitlm([ones(size(x,1),1),x,controls],y,'intercept',false,'weights',w);
 alpha=parReg.Coefficients.Estimate(1);
@@ -291,44 +290,52 @@ if(withHistogram)
     p.pBin=nexttile([3 1]);
 end
 
-%binscatter(x,y)
-hold on
+
+
 % Plot non-parametric
 
 % Center of bin:
 %xBins=edges(1:end-1)*.5+edges(2:end)*.5;
 % Weighted center of bin:
-xBins=x'*b(:,binsWithObs)./sum(b(:,binsWithObs),1);
+NByBin=sum(b(:,binsWithObs),1);
+xBins=x'*b(:,binsWithObs)./NByBin;
 
 if(withErrorBars)
     errorbar(xBins,u,1.96*se,'.')
+    hold on
 end
 p.xvalues=xBins;
 if(withScatter)
-    p.scatter=scatter(xBins,u,markerSize,marker,'MarkerEdgeColor',markerEdgeColor);
+    p.scatter=scatter(xBins,u,markerSize*NByBin/mean(NByBin),marker,'filled','MarkerEdgeColor',markerEdgeColor,'MarkerFaceColor',markerFaceColor,'MarkerFaceAlpha',markerFaceAlpha);
 end
 if(withLinearFit)
-    % Plot parametric:
+    % Plot linear fit
+    hold on
     p.linearFitPlot=fplot(@(x)alpha+beta*x,[min(x) max(x)],'--','color',fitColor);
-    annotation('textbox',posCoeffFit,'String',sprintf('$\\beta: %.3f\\quad(%.3f)$',beta,betaSE),'FitBoxToText','on','Interpreter','latex','edgecolor','none','color',fitColor)
+    %annotation('textbox',posCoeffFit,'String',sprintf('$\\beta: %.3f\\quad(%.3f)$',beta,betaSE),'FitBoxToText','on','Interpreter','latex','edgecolor','none','color',fitColor)
+
 end
 
 if(withQuantiles)
+    hold on
     p.quantileArea=patch('xdata',[p.xvalues,p.xvalues(end:-1:1)],'ydata',[p.quantileInf;p.quantileSup(end:-1:1)],'facecolor',areaColor,'facealpha',.1,'edgecolor','none');
-    
-    plot(p.xvalues,p.quantileInf,'LineStyle',':','Color',areaColor*alphaEdgeArea+[1 1 1]*(1-alphaEdgeArea));
-    plot(p.xvalues,p.quantileSup,'LineStyle',':','Color',areaColor*alphaEdgeArea+[1 1 1]*(1-alphaEdgeArea));
+    pQInf=plot(p.xvalues,p.quantileInf,'LineStyle',':','Color',areaColor*alphaEdgeArea+[1 1 1]*(1-alphaEdgeArea));
+    pQSup=plot(p.xvalues,p.quantileSup,'LineStyle',':','Color',areaColor*alphaEdgeArea+[1 1 1]*(1-alphaEdgeArea));
+
+    %uistack(pQSup,'bottom')
+    %uistack(pQInf,'bottom')
+    uistack(p.quantileArea,'bottom')
 end
 
 if(withEdges)
-p.binEdges=edges;
+    p.binEdges=edges;
 end
 
 set(gca,'ygrid','on')
 hold off
 
-xlims=[min(x),max(x)];
-xlims=xlims+[-1 1]*0.02*diff(xlims);
+xlims=[min(xBins),max(xBins)];
+xlims=xlims+[-1 1]*0.1*diff(xlims);
 xlim(xlims)
 
 p.xlims=xlims;
@@ -344,6 +351,12 @@ if(all(size(yLims)==[1 2])&&not(any(isnan(yLims))))
     ylim(yLims);
 end
 
+if(withLinearFit)
+    % Plotting slope parameter
+    xlims=xlim;
+    ylims=ylim;
+    annotation2('textbox',[posCoeffFit(1)*diff(xlims)+xlims(1),posCoeffFit(2)*diff(ylims)+ylims(1)],'e','String',sprintf('$\\beta: %.3f\\quad(%.3f)$',beta,betaSE),'Interpreter','latex','color',fitColor);
+end
 
 
 %% Histogram
@@ -351,34 +364,34 @@ if(withHistogram)
     histogramColor=[196	222	241	]/256;
     histogramAlpha=.5;
     p.pHist=nexttile;
-    
+
     if(strcmp(binStrategy,'saturated'))
-        
+
         barWidth=diff(xlims)/200;
-        
+
         freq=sum(b);
         bar(uniqueX,freq,barWidth,'faceColor',histogramColor,'FaceAlpha',1);
-        
+
         if(modifyXTicks)
             xticks(uniqueX)
             xticklabels(gca,mat2cellstr(uniqueX,'precisionDecimal','%.1f'))
         end
-        
+
     else
         % Check if unque values are only a few:
-        
-        
+
+
         if(length(uniqueX)<=20)
             freq=nan(length(uniqueX),1);
-            
+
             for i=1:length(uniqueX)
                 freq(i)=sum(x==uniqueX(i));
             end
             barWidth=diff(xlims)/200;
-            
+
             bar(uniqueX,freq,barWidth,'faceColor',histogramColor,'FaceAlpha',1);
-            
-            
+
+
             % plot bin limits:
             edgesSep=edges;
             if(leftEdgeIncluded)
@@ -388,16 +401,16 @@ if(withHistogram)
                 edgesSep(1)=edgesSep(1)-barWidth;
                 edgesSep(2:end)=edgesSep(2:end)+barWidth;
             end
-            
-            
-            
+
+
+
             hold on
             % limits of bins:
             for i=1:length(edges)
                 plot([edgesSep(i),edgesSep(i)],[0,max(freq)*1.1],'--r')
             end
             hold off
-            
+
             if(modifyXTicks)
                 xticks(uniqueX)
                 xticklabels(gca,mat2cellstr(uniqueX,'precisionDecimal','%.1f'))
@@ -413,23 +426,23 @@ if(withHistogram)
                     right=right+diff(xlims)*.01;
                 end
                 rectangle('position',[left,0,right-left,freq(i)],'facecolor',[histogramColor,histogramAlpha]);
-                
+
             end
-            
+
             if(modifyXTicks)
                 xticks(xBins)
                 xticklabels(gca,mat2cellstr(xBins,'precisionDecimal','%.2f'))
             end
-            
+
         end
     end
     xlim(xlims)
     ylim([0,max(freq)*1.1]);
-    
+
     ylabel('Freq.')
-    
+
     yticks(max(freq))
-    
+
 end
 if(not(isempty(xlab)))
     xlabel(xlab)

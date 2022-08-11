@@ -76,7 +76,10 @@ fpdf=[latexTempfilesPath,texFile,'.pdf'];delete(fpdf);
 
 fprintf('LATEX is running... ');
 % More opts with: !pdftex --help
-system(sprintf('"%s" -halt-on-error -output-directory="%s" "%s"',latexExecutablePath,latexTempfilesPath,ftex)); %
+
+% Need to change "cd" because if not it can't read figures in subfolders
+system([sprintf('cd %s;',latexTempfilesPath),...
+    sprintf('"%s" -halt-on-error -output-directory="%s" "%s"',latexExecutablePath,latexTempfilesPath,ftex)]); %
 
 
 if(isfile(fpdf))
@@ -85,7 +88,7 @@ if(isfile(fpdf))
 end
 warning('off','MATLAB:DELETE:FileNotFound')
 delete([latexTempfilesPath,texFile,'.aux'])
-delete([latexTempfilesPath,texFile,'.log'])
+%delete([latexTempfilesPath,texFile,'.log'])
 delete([latexTempfilesPath,texFile,'.out'])
 warning('on','MATLAB:DELETE:FileNotFound')
 

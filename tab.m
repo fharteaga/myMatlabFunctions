@@ -8,7 +8,7 @@ withBarGraph=false;
 forcePrint=false;
 includeMissing=true;
 sortByFreq=false;
-
+withWeights=false;
 
 
 if(~isempty(varargin))
@@ -16,6 +16,9 @@ if(~isempty(varargin))
     % Loading optional arguments
     while ~isempty(varargin)
         switch lower(varargin{1})
+            case {'weights','w'}
+                weights= varargin{2};
+                withWeights=true;
             case {'withprintedoutput'}
                 withPrintedOutput = varargin{2};
             case {'withbargraph','wb'}
@@ -31,6 +34,12 @@ if(~isempty(varargin))
         end
         varargin(1:2) = [];
     end
+end
+
+if(withWeights)
+    assert(all(weights-floor(weights)==0),'Weights must be frequency weights (i.e. integers)')
+    vector=repelem(vector,weights);
+  
 end
 
 isLogical=islogical(vector);

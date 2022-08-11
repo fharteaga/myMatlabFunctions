@@ -20,6 +20,7 @@ includeExternalRelativePathSubfigs=false;
 externalRelativePath='';
 externalRelativePathSubfigs='';
 withExtraWidth=true;
+copyToClipboard=false; % Don't set it to true, because from terminal it generates a problem
 
 if(nargin==0)
     d=[1,1];
@@ -47,6 +48,8 @@ if(~isempty(varargin))
                 scale=varargin{2};
             case 'docwidth'
                 docWidth=varargin{2};
+            case {'copytoclipboard','c'}
+                copyToClipboard=varargin{2};
             case {'externalrelativepath','erp'}
                 externalRelativePath=varargin{2};
                 if(~isempty(externalRelativePath))
@@ -105,7 +108,12 @@ else
     extraWidth2='%} % End of \makebox';
 end
 
-text=horzcat(newline,'\begin{figure}[H]',newline,'\centering',newline,'\caption{ ',caption,'}',newline,'\label{',label,'}');
+if(isempty(caption))
+    preCaption='%';
+else
+    preCaption='';
+end
+text=horzcat(newline,'\begin{figure}[H]',newline,'\centering',newline,preCaption,'\caption{ ',caption,'}',newline,'\label{',label,'}');
 
 if(includeExternalRelativePathSubfigs)
     if(not(endsWith(externalRelativePathSubfigs,'/')))
@@ -138,9 +146,14 @@ for i=1:d(1)
             %note='%\floatfoot{\scriptsize \textit{Notes:}}';
             label='%\label{ }';
         end
-        note='';
+
         if(not(withInput)||not(isempty(input{i,j})))
-            text=horzcat(text,newline,newtab,'%',sprintf('[%i,%i]',i,j),newline,newtab,'\begin{subfigure}[b]{',sprintf('%.3f',width),'\textwidth}',newline,newtab2,'\centering',newline,newtab2,'\caption{\centering ',captionSub,'}',newline,newtab2,label,newline,newtab2,'\includegraphics[scale=',sprintf('%.3f',scale),']{',externalRelativePathSubfigs,fileSub,'}',newline,newtab,'\end{subfigure}');
+            if(isempty(captionSub))
+                preCaption='%';
+            else
+                preCaption='';
+            end
+            text=horzcat(text,newline,newtab,'%',sprintf('[%i,%i]',i,j),newline,newtab,'\begin{subfigure}[b]{',sprintf('%.3f',width),'\textwidth}',newline,newtab2,'\centering',newline,newtab2,preCaption,'\caption{\centering ',captionSub,'}',newline,newtab2,label,newline,newtab2,'\includegraphics[scale=',sprintf('%.3f',scale),']{',externalRelativePathSubfigs,fileSub,'}',newline,newtab,'\end{subfigure}');
         end
     end
     if(i<d(1))
@@ -193,5 +206,9 @@ if(export)
 
         end
     end
+end
+
+if(copyToClipboard)
+    showShorcut(text);
 end
 

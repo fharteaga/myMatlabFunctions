@@ -26,7 +26,12 @@ relevant=ismember(logsTwilio.newTo,phone)|ismember(logsTwilio.newFrom,phone);
 
 logsTwilio=logsTwilio(relevant,:);
 
-logsTwilio=sortrows(logsTwilio,'date');
+if(ismember('date',logsTwilio.Properties.VariableNames))
+dateVar='date';
+elseif(ismember('datenumSent',logsTwilio.Properties.VariableNames))
+dateVar='datenumSent';
+end
+logsTwilio=sortrows(logsTwilio,dateVar);
 
 N=height(logsTwilio);
 
@@ -34,7 +39,7 @@ lastDate=0;
 conversationNum=0;
 for i=1:N
 
-    d=logsTwilio.date(i);
+    d=logsTwilio.(dateVar)(i);
     f=logsTwilio.newFrom{i};
     t=logsTwilio.newTo{i};
     b=logsTwilio.body{i};

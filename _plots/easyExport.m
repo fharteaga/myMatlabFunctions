@@ -28,7 +28,7 @@ width=400;
 height=200;
 withGca=false;
 withGcf=false;
-resolution=200;
+
 noAxisChange=false; % Doesn't make sense to have if it's a subplot or tiledlayout, set it to true if that is the case
 displayLatex=true;
 caption='';
@@ -46,7 +46,10 @@ changeXTickFormat=false;
 xTickFormat='';
 xTickThousands=false;
 export=true;
+
 colorspace='rgb'; % 'rgb' or 'gray'
+resolution=300;
+format='png'; % eps or png
 
 
 
@@ -98,10 +101,12 @@ while ~isempty(varargin)
         case {'externalrelativepath','erp'}
             externalRelativePath=varargin{2};
             if(~isempty(externalRelativePath))
-            includeExternalRelativePath=true;
+                includeExternalRelativePath=true;
             end
         case {'colorspace'}
             colorspace=varargin{2};
+        case {'format'}
+            format=varargin{2};
         otherwise
             error(['Unexpected option: ' varargin{1}])
     end
@@ -184,10 +189,16 @@ if(~noAxisChange)
 end
 
 if(export)
-if(not(endsWith(file,'.png')))
-   file= sprintf('%s.png',file);
+if(not(endsWith(file,['.',format])))
+   file= sprintf('%s.%s',file,format);
 end
-exportgraphics(gcf_,file,'Resolution',resolution,'colorspace',colorspace);
+if(strcmpi(format,'eps'))
+contentType='vector';
+else
+contentType='auto';
+    
+end
+exportgraphics(gcf_,file,'Resolution',resolution,'colorspace',colorspace,'contentType',contentType);
 if(displayLatex||nargout>0)
     
     

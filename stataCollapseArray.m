@@ -86,7 +86,7 @@ for c=1:cantVars
             assert(not(isnan(posAux))&&(posAux>=1),'Position has to  >=1, like pos1, pos21 ')
         end
         
-        funC{c}=@(x)getValueInPos(x,posAux,true);
+        funC{c}=@(x)getItemInPos(x,posAux,true);
         
         % NORMAL FUNCTIONS:
     else
@@ -106,9 +106,9 @@ for c=1:cantVars
             case 'nanmean'
                 funC{c}=@(x)mean(x,'omitnan');
             case 'first'
-                funC{c}=@(x)getValueInPos(x,1,true);
+                funC{c}=@(x)getItemInPos(x,1,true);
             case 'last'
-                funC{c}=@(x)getValueInPos(x,-1,true);
+                funC{c}=@(x)getItemInPos(x,-1,true);
             case 'sd'
                 funC{c}=@std;
             case 'nansd'
@@ -124,9 +124,9 @@ for c=1:cantVars
             case 'countunique'
                 funC{c}=@(x)length(unique(x))-sum(ismissing(x));
             case 'second'
-                funC{c}=@(x)getValueInPos(x,2,true);
+                funC{c}=@(x)getItemInPos(x,2,true);
             case 'third'
-                funC{c}=@(x)getValueInPos(x,3,true);
+                funC{c}=@(x)getItemInPos(x,3,true);
             otherwise
                 error('stat not valid for numeric input')
         end
@@ -134,12 +134,23 @@ for c=1:cantVars
 end
 
 
-% FUNCTION THAT APPLY ONLY TO STRINGS!
+% FUNCTION THAT APPLY ONLY TO CELLS, and RETURN CELLS:
 for c=1:cantVars_cell
     currentStat=lower(whichstats_cell{c});
-        
+
+
+    % CUSTOM FUNCTION:
+    if(strcmp(currentStat(1:2),'c_'))
+        if(length(currentStat)==2)
+            customFun=customFunInput;
+        else
+            currentStatOrig=whichstats_cell{c}; % No lowercase
+            customFun=customFunInput.(currentStatOrig(3:end));
+        end
+        assert(isa(customFun,'function_handle'))
+        funC_cell{c}=customFun;
         % POSITION:
-    if(strcmp(currentStat(1:2),'po'))
+    elseif(strcmp(currentStat(1:2),'po'))
         assert(length(currentStat)>3&&all(currentStat(1:3)=='pos'))
         if(all(currentStat(end-3:end)=='last'))
             posAux=-str2double(currentStat(4:end-4));
@@ -148,23 +159,27 @@ for c=1:cantVars_cell
             posAux=str2double(currentStat(4:end));
             assert(not(isnan(posAux))&&(posAux>=1),'Position has to  >=1, like pos1, pos21 ')
         end
-        
-        funC_cell{c}=@(x)getValueInPos(x,posAux,false);
-        
+
+        funC_cell{c}=@(x)getItemInPos(x,posAux,false);
+
         % NORMAL FUNCTIONS:
     else
         switch currentStat
-           
+
             case 'first'
-                funC_cell{c}=@(x)getValueInPos(x,1,false);
+                funC_cell{c}=@(x)getItemInPos(x,1,false);
             case 'last'
-                funC_cell{c}=@(x)getValueInPos(x,-1,false);
+                funC_cell{c}=@(x)getItemInPos(x,-1,false);
             case 'count'
-                funC_cell{c}=@length;
+                funC_cell{c}=@(x){length(x)};
             case 'second'
-                funC_cell{c}=@(x)getValueInPos(x,2,false);
+                funC_cell{c}=@(x)getItemInPos(x,2,false);
             case 'third'
-                funC_cell{c}=@(x)getValueInPos(x,3,false);
+                funC_cell{c}=@(x)getItemInPos(x,3,false);
+            case 'countmissing'
+                funC_cell{c}=@(x){sum(ismissing(x))};
+            case 'countunique'
+                funC_cell{c}=@(x){length(unique(x))-sum(ismissing(x))};
             otherwise
                 error('stat not valid for CELL input')
         end
@@ -183,6 +198,8 @@ for i=2:N
         for c=1:cantVars
             varCollapsed(counterUnique,c)=funC{c}(array(positions(1):positions(2),c));
         end
+
+        % OJO: output of funC_cell{c} must be a cell!
         for c=1:cantVars_cell
             varCollapsed_cell(counterUnique,c)=funC_cell{c}(array_cell(positions(1):positions(2),c));
         end
@@ -216,7 +233,7 @@ assert(positions(2)==N);
 end
 
 
-function value=getValueInPos(miniArray,pos,numericV)
+function value=getItemInPos(miniArray,pos,numericV)
 lengthArray=length(miniArray);
 if(lengthArray>=abs(pos)&&not(pos==0))
     if(pos>0)

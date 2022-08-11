@@ -1,48 +1,71 @@
-function [areAllUnique,freq]=allunique(var)
+function [areAllUnique,freq]=allunique(var,varargin)
+
+printExamples=0;
+printDetails=false;
+vars={};
+if(~isempty(varargin))
+
+    % This checks a few things, including if there is a struct called "opts"
+    varargin=checkVarargin(varargin);
+
+    while ~isempty(varargin)
+        switch lower(varargin{1})
+            case {'printexamples','pe'}
+                printExamples= varargin{2};
+                if(islogical(printExamples))
+                    printExamples=double(printExamples);
+                end
+            case {'printdetails','pd'}
+                printDetails=varargin{2};
+            case {'variablesnames','vars'}
+                vars=varargin{2};
+                if(not(iscellstr(vars)))
+                    vars={vars};
+                end
+
+
+            otherwise
+                error(['Unexpected option: ' varargin{1}])
+        end
+        varargin(1:2) = [];
+    end
+end
 
 
 if(istable(var))
     %% If table
-    
-    areAllUnique=height(var)==height(unique(var));
-    
-    if(nargout>1)
-        
-        ids=var.Properties.VariableNames;
-        
-        assert(not(ismember('ones_a_',ids)))
-        assert(not(ismember('order_a_',ids)))
-        
-        
-        var.ones_a_=ones(height(var),1);
-        var.order_a_=(1:height(var))';
-        var=sortrows(var,ids);
-        var=stataCollapse(ids,var,'ones_a_','sum','mergewithoriginal',true);
-        var=sortrows(var,'order_a_');
-        freq=var.ones_a__sum;
-        
+    varsT=var.Properties.VariableNames;
+    if(isempty(vars))
+        vars=varsT;
+    else
+        assert(all(ismember(vars,varsT)))
     end
-    
-else 
+    areAllUnique=height(var)==height(unique(var(:,vars)));
+
+
+
+else
     %% If matrix or cellstr
     assert(all(not(ismissing(var))),'Cannot check uniques of there are missings')
-    
+
     if(sum(size(var)>1)>1)
         assert(nargout==1)
         var=reshape(var,numel(var),1);
     end
     areAllUnique=length(var)==length(unique(var));
-    
-    if(nargout>1)
-        
-        a=table;
-        a.id=var;
-        a.ones=ones(height(a),1);
-        a.order=(1:height(a))';
-        a=sortrows(a,'id');
-        a=stataCollapse('id',a,'ones','sum','mergewithoriginal',true);
-        a=sortrows(a,'order');
-        freq=a.ones_sum;
-        
+
+
+end
+
+if(areAllUnique)
+    printExamples=0;
+end
+
+if(nargout>1||printExamples>0)
+    if(istable(var))
+        freq=duplicates(var,'vars',vars,'printExamples',printExamples,'printDetails',printDetails);
+    else
+        freq=duplicates(var,'printExamples',printExamples);
     end
+
 end

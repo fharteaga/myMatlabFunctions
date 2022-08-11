@@ -23,8 +23,10 @@ prefijo='';
 parIni='';
 parEnd='';
 withThousandsSeparator=true;
+thousandsSeparator=',';
 returnChar=false;
 nanReplacement='';
+spanish=false;% True changes commas for dots, and dots for commas;
 
 if(~isempty(varargin))
     
@@ -55,6 +57,8 @@ while ~isempty(varargin)
             withThousandsSeparator=varargin{2};
         case {'returnchar','rc'}
             returnChar=varargin{2};
+        case {'spanish','s'}
+            spanish=varargin{2};
         otherwise
             error(['Unexpected option: ' varargin{1}])
     end
@@ -98,7 +102,7 @@ for j=1:ancho
     end
     for i=1:alto
         if(withThousandsSeparator)
-            auxNueva=separator(sprintf(precision,mat(i,j)));
+            auxNueva=separator(sprintf(precision,mat(i,j)),thousandsSeparator);
             cellNueva{i,j}=[parIni,prefijo,auxNueva,sufijo,parEnd];
         else
             cellNueva{i,j}=sprintf([parIni,prefijo,precision,sufijo,parEnd],mat(i,j));
@@ -107,6 +111,12 @@ for j=1:ancho
 end
 
 cellNueva(cellfun(@(x) strcmp(x,[parIni,prefijo,'NaN',sufijo,parEnd]),cellNueva))={nanReplacement};
+
+
+if(spanish)
+cellNueva=replace(cellNueva,{',','.'},{'.',','});
+end
+
 
 if(revisarFil)
     cellNueva=cellNueva';
@@ -117,16 +127,16 @@ if(returnChar)
 end
 
 
-    function S_out=separator(S)
+    function S_out=separator(S,thousandsSeparator)
         pos=strfind(S, '.');
         fin=1;
         if(isempty(pos));pos=length(S)+1;end % Si no tiene decimal
         if(S(1)=='-');fin=2;end % Si tiene un signo negativo
-        S(2,  pos-4:-3:fin) = ',';
+        S(2,  pos-4:-3:fin) = thousandsSeparator;
         
         % Esto remplaza la coma por espacio en lugares que no deberia haber
         % coma (evita ' ,   , 12,123.123123')
-        S(2,(S(1,:)==char(32)|S(1,:)=='-')&S(2,:)==',')=char(32);
+        S(2,(S(1,:)==char(32)|S(1,:)=='-')&S(2,:)==thousandsSeparator)=char(32);
         darVuelta=S(1,:)=='-'&S(2,:)==char(32);
         S(:,darVuelta)=S([2 1],darVuelta);
         

@@ -5,7 +5,28 @@ DATE:  2020--
 PROJECT:
 -------------------------------------------------------------------------
 DESCRIPTION: Create latex of survey (and excel "easy-to-translate") from
-the qualtrics exported dataset
+the qualtrics exported dataset.
+
+It will create an intermediate file (called q.xls) that needs work:
+
+- Fill "Ommit" colum (leave empty if not-ommiting)
+
+- For questions with more than alternative or subquestion: create an empty
+row on top of it, fill the "type" and and "question" box. Erase the
+"question"
+for the many options, check that que question are ok.
+
+- For questions with no alternatives or subquestion: do not create an empty
+row on top of it
+
+
+type column:
+Select multiple 
+Select one 
+Slider X to X
+Open text 
+Text
+
 
 =========================================================================
 %}
@@ -16,16 +37,38 @@ pcName=char(java.lang.System.getProperty('user.name'));
 if(strcmp(pcName,'felipe'))
     % PC Felipe
     myDir='/Users/felipe/Dropbox/';
-    addpath(genpath([myDir,'/myMatlabFunctions/']));
+    paths=split(genpath([myDir,'/myMatlabFunctions/']),':');paths=paths(~contains(paths,{'/.','\.'}));addpath(paths{:});clearvars('paths');
     projectDir=[myDir,'/projects/cb-warnings-ecuador/'];
 end
 
+% Elije si quiere traducir opciones de "select one" questions
+translateSelectOne=true;
 
-fileQualtrics='/Users/felipe/Dropbox/Mineduc/encuestas/riesgo2020/dataBruta/SAE_Encuesta_Satisfaccion - FULL sample_March 26, 2021_22.28.xlsx';
+% File with qualtrics data (raw from qualtrics platform)
+fileQualtrics=[myDir,'/projects/warningsBid/surveyPreResultados/peru2022/dataRaw/MatriculaDigital+-+Peru+-+Encuesta+Pre-resultados+-+2022_March+10,+2022_17.40.xlsx'];
+
+% Raw files with questionnaire and alternatives for "Select on" quesitons 
+rawFile=[myDir,'/projects/warningsBid/surveyPreResultados/peru2022/printSurveyLatex/q.xls'];
+rawFileSelectOne=[myDir,'/projects/warningsBid/surveyPreResultados/peru2022/printSurveyLatex/qSelectOne.xls'];
+
+% Worked files with questionnaire and alternatives for "Select on" quesitons 
+workedFile=[myDir,'/projects/warningsBid/surveyPreResultados/peru2022/printSurveyLatex/q_worked.xlsx'];
+workedSheet='Translation'; % 'Sheet1', 'Translation'
+
+workedFileSelectOne=[myDir,'/projects/warningsBid/surveyPreResultados/peru2022/printSurveyLatex/qSelectOne_worked.xls'];
+workedSheetSelectOne='Sheet1'; % 'Sheet1', 'Translation'
+
+
+% Where to save the latex code (without preample) [leave blank if no
+% saving]
+fileOutput=[myDir,'/projects/warningsBid/surveyPreResultados/peru2022/printSurveyLatex/survey.tex'];
+
+
+%% Load data
+
 data=readQualtricsExport(fileQualtrics,'originalQuestionNames',true,'originalQuestionDescriptions',true);
 vars=data.Properties.VariableNames;
 questions=data.Properties.VariableDescriptions;
-%%
 
 subQ=cell(size(questions));
 mainQ=cell(size(questions));
@@ -48,51 +91,56 @@ for v=1:length(vars)
     end
 end
 
-% Manualy change answers of "select_one" questions.
 
-data.QID212=renamecats(data.QID212,...s
-    categories((data.QID212)),...
-    {'COVID-19 did not affect my application process',' Without COVID-19, I would have known better the schools that I already know, but I would not have applied to more schools', 'Without COVID-19, I would have known more schools and perhaps I would have added them to my application '} );
+blank=repmat({''},length(vars),1);
+writecell([{'Ommit','varName','type','options','question'};[blank vars' blank mainQ' subQ']],rawFile)
 
-data.QID151=renamecats(data.QID151,... 
-{'Fue necesario averiguar más de ellos','No fue necesario buscar más información'},...
-{'It was necessary to find out more about them', 'It was not necessary to search for more information'});
+% Work on the "rawFile"! See instructions in the top. Then save the "workedFile"
 
-
-data.QID154=renamecats(data.QID154,... 
-categories(data.QID154),...
-{'I know the other options well and I prefer to have no placement than to add those alternatives','I think I will definitely be placed in one of the schools I applied for','It is very difficult to find more schools','There are no more schools close enough (good or bad)'});
-
-data.QID156=renamecats(data.QID156,... 
-{'No','Sí'},...
-{'No','Yes'});
-data.QID140=renamecats(data.QID140,... 
-{'No','Sí'},...
-{'No','Yes'});
-data.QID147=renamecats(data.QID147,... 
-{'No','Sí'},...
-{'No','Yes'});
-
-
-data.QID232=renamecats(data.QID232,... 
-{'Correo electrónico','Otro','SMS','Teléfono','Whatsapp'},...
-{'E-mail','Other','SMS','Telephone','Whatsapp'});
-
-
-data.QID240=renamecats(data.QID240,...
-{'No es prioritario','No sé','Sí es prioriatrio'},...
-{'He/she is not a beneficiary of the preferential subsidy','I do not know','He/she is a beneficiary of the preferential subsidy'});
-
-
-writecell([vars' mainQ' subQ'],dirBasura('q.xls'))
-
-% Work on the sheet, then read it again to produce the latex
-%%
-a=readtable('/Users/felipe/Dropbox/myMatlabFunctions/_basura/q_worked_chile.xls','Sheet','translation','FileType','spreadsheet','VariableNamesRange','A1','DataRange','A2');
+a=readtable(workedFile,'Sheet',workedSheet,'FileType','spreadsheet','VariableNamesRange','A1','DataRange','A2');
 a=a(not(a.Ommit==1),:);
+
+
+if(translateSelectOne)
+
+    % Exporta las alternativas
+
+    alternativas=cell(0,1);
+for i=1:height(a)
+    type=a.type{i};
+    if(not(isempty(type)))
+        if(strcmp(type,'Select one'))
+            % Get the options
+            alternatives=unique(data.(a.varName{i}));
+            alternatives=alternatives(not(ismissing(alternatives)));
+            if(iscategorical(alternatives))
+                alternativas=[alternativas;categories(alternatives)];
+               
+            else
+                error('Es select one, pero no tiene alternativas como "categorical"')
+
+            end
+        end
+    end
+end
+
+
+alternativas=unique(alternativas,'stable');
+blank=repmat({''},length(alternativas),1);
+writecell([{'options','translation'};[alternativas blank]],rawFileSelectOne)
+    % Lee las traducciones
+b=readtable(workedFileSelectOne,'Sheet',workedSheetSelectOne,'FileType','spreadsheet','VariableNamesRange','A1','DataRange','A2');
+
+end
+
+
+
+
+%% Imprime el latex
 % 1: pregunta, 2: type, 3 alternative
 preLatex=cell(height(a),2);
 counter=0;
+
 
 
 for i=1:height(a)
@@ -119,7 +167,15 @@ for i=1:height(a)
                 alternatives=categories(alternatives);
                 fprintf('\n%s - ',a.varName{i})
                genCellstr(alternatives)
-                
+
+               if(translateSelectOne)
+
+                   [esta,pos]=ismember(alternatives,b.options);
+                   assert(all(esta))
+                   alternatives=b.translation(pos);
+
+               end
+
             end
             for j=1:length(alternatives)
                 counter=counter+1;
@@ -159,7 +215,7 @@ for i=1:size(preLatex,1)
                 latex=[latex,newline,'\begin{enumerate}'];
             end
             nuevaPreg=false;
-            latex=[latex,newline,'\item ',preLatex{i,1}];
+            latex=[latex,newline,sprintf('\t'),'\item ',preLatex{i,1}];
     end
     
 end
@@ -187,3 +243,10 @@ end
 
 
 compileLatex(latex)
+if(not(isempty(fileOutput)))
+    fileID = fopen(fileOutput,'w');
+    fprintf(fileID,'%s',latex);
+    fclose(fileID);
+
+
+end

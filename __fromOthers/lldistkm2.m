@@ -1,6 +1,6 @@
 function [d1km]=lldistkm2(latlon1,latlon2)
 
-% Calcula una matriz de distancia entre dos puntos: latlon1 y latlon2
+% Calcula distancia entre dos puntos: latlon1 y latlon2
 
 
 % format: [d1km d2km]=lldistkm(latlon1,latlon2)
