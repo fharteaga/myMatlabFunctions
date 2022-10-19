@@ -4,6 +4,8 @@ horz=false; % en progreso, not ready yet
 withNBar=false;
 minPercentageToShow=.1;
 includeAll=true;
+withLegend=true;
+withLegendTitle=true;
 locLegend='';
 %binary=false;
 %binaryValue=1;
@@ -18,6 +20,10 @@ if(~isempty(varargin))
                 horz = varargin{2};
             case {'includeall','all'}
                 includeAll = varargin{2};
+            case {'withlegend','wl'}
+                withLegend = varargin{2};
+            case {'withlegendtitle','wlt'}
+                withLegendTitle = varargin{2};
             case 'loclegend'
                 locLegend = varargin{2};
             case {'minpercentagetoshow','mps'}
@@ -29,7 +35,16 @@ if(~isempty(varargin))
     end
 end
 
+% Check if there is more than one x:
+if(iscellstr(nameVarX))
 
+    if(length(nameVarX)==1)
+        nameVarX=nameVarX{1};
+    else
+        [tabla,varNameCombined]=combineDiscreteVars(tabla,nameVarX);
+        nameVarX=varNameCombined;
+    end
+end
 
 varY=tabla.(nameVarY);
 varX=tabla.(nameVarX);
@@ -205,6 +220,8 @@ end
 
 textLegend=categorical(bart.value(end:-1:1));
 maxLength=max(cellfun(@length,categories(textLegend)));
+
+if(withLegend)
 if(isempty(locLegend))
     if(maxLength<20)
         locLegend='eastoutside';
@@ -215,7 +232,10 @@ if(isempty(locLegend))
 end
 
 lgd=legend(br(end:-1:1),textLegend,'location',locLegend); % southoutside eastoutside
+if(withLegendTitle)
 title(lgd,labelVarY)
+end
+end
 
 
 

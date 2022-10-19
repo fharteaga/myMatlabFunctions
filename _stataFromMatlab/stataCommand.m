@@ -77,12 +77,16 @@ warning('on','MATLAB:DELETE:FileNotFound')
 
 code='';
 if(any(ismember('ereturn',typeOfReturn)))
-% Add program that reads eReturn
-code=[newline,fileread([stataProgramsPath,'/printLocalsEReturn.do'])];
+    % Add program that reads eReturn
+    funCode=fileread([stataProgramsPath,'/printLocalsEReturn.do']);
+    assert(~isempty(funCode));
+    code=[newline,funCode];
 end
 
 if(any(ismember('return',typeOfReturn)))
-code=[newline,fileread([stataProgramsPath,'/printLocalsReturn.do'])];
+    funCode=fileread([stataProgramsPath,'/printLocalsReturn.do']);
+    assert(~isempty(funCode));
+    code=[newline,funCode];
 end
 
 % Open file to save eReturn

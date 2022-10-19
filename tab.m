@@ -29,6 +29,8 @@ if(~isempty(varargin))
                 sortByFreq=varargin{2};
             case {'forceprint','fp'}
                 forcePrint=varargin{2};
+           case {'ommitnan','ommitmissing'}
+                includeMissing=not(varargin{2});
             otherwise
                 error(['Unexpected option: ' varargin{1}])
         end

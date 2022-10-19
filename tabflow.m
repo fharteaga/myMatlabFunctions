@@ -17,12 +17,31 @@ maxLabelLengthFromDescription=20;
     if(istable(leftvar))
         dataAux=leftvar;
         vars=rightvar;
-        assert(all(cellfun(@ischar,rightvar)))
+
+        % check if there is a cell inside the cell, and combine them!
         assert(length(vars)==2)
+        if(iscell(vars{1}))
+            newVarName='combinedVarL';
+               dataAux=combineDiscreteVars(dataAux,vars{1},'varNameCombined',newVarName);
+               vars{1}=newVarName;
+        end
+        if(iscell(vars{2}))
+            newVarName='combinedVarR';
+            dataAux=combineDiscreteVars(dataAux,vars{2},'varNameCombined',newVarName);
+            vars{2}=newVarName;
+        end
+
+        assert(all(cellfun(@ischar,vars)))
+        
 
         labels=cell(2,1);
         for v=1:length(vars)
-            labels{v}=dataAux.Properties.VariableDescriptions{vars{v}};
+            if(~isempty(dataAux.Properties.VariableDescriptions))
+
+           
+      labels{v}=dataAux.Properties.VariableDescriptions{vars{v}};
+            end
+      
             if(isempty(labels{v})||length(labels{v})>maxLabelLengthFromDescription)
                 labels{v}=vars{v};
             end
@@ -52,6 +71,8 @@ if(~isempty(varargin))
                 rightVarLabel = varargin{2}{2};
             case {'includemissing','im','m'}
                 includeMissing=varargin{2};
+            case {'ommitnan'}
+                includeMissing=varargin{2};
             case {'precisioncondperc'}
                 precisionCondPerc= varargin{2};
             case {'minperctoplot'}
@@ -62,11 +83,6 @@ if(~isempty(varargin))
         varargin(1:2) = [];
     end
 end
-
-
-
-
-
 
 
 if(withWeights)

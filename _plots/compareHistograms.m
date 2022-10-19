@@ -20,8 +20,15 @@ else
         assert(all(cellfun(@ischar,vars)))
         varLabels=cell(length(vars),1);
         for v=1:length(vars)
-            varLabels{v}=dataAux.Properties.VariableDescriptions{vars{v}};
-            if(isempty(varLabels{v})||length(varLabels{v})>maxLabelLengthFromDescription)
+            if(isempty(dataAux.Properties.VariableDescriptions))
+                wVarDesc=false;
+            else
+                wVarDesc=true;
+                varLabels{v}=dataAux.Properties.VariableDescriptions{vars{v}};
+            end
+            
+
+            if(not(wVarDesc)||isempty(varLabels{v})||length(varLabels{v})>maxLabelLengthFromDescription)
                 varLabels{v}=vars{v};
             end
             vars{v}=dataAux.(vars{v});
@@ -59,12 +66,12 @@ elseif(cantVars==2)
     colors=linspecerGrayproof(cantVars-1,'dispersion',0.2);
     colors=[colors(1,:);grey;colors(2:end,:)];
 else
-%     grey=[1 1 1]*.3;
-%     colors=linspecerGrayproof(cantVars-1,'dispersion',0.2);
-%     colors=[grey;colors(1:end,:)];
+    %     grey=[1 1 1]*.3;
+    %     colors=linspecerGrayproof(cantVars-1,'dispersion',0.2);
+    %     colors=[grey;colors(1:end,:)];
 
     colors=linspecerGrayproof(cantVars,'dispersion',0.2);
-    
+
 
 end
 
@@ -74,7 +81,7 @@ end
 % Others vars are transparent with non-white and thick borders. First is
 % dark grey
 
-if(cantVars<2)
+if(cantVars<3)
     overlap=true;
     alpha=[.4;zeros(cantVars-1,1)];
     edgealpha=[.4;ones(cantVars-1,1)]; % Edge of first var has to be visible to distinguish between columns
@@ -105,6 +112,8 @@ ignoreMissing=false;
 withKernelDensity=false;
 withHistogram=true;
 withMean=true;
+withCoeff=true;
+withMeanSE=true;
 kernelWithDifferentAxis=false;
 forceCoefPosFactor=1;
 blackCoefficients=false;
@@ -150,8 +159,12 @@ if(~isempty(varargin))
                 withKernelDensity=varargin{2};
             case {'withhistogram','wh'}
                 withHistogram=varargin{2};
-            case {'withmean','wm'}
+            case {'withmean','wm'} % This is bar and coeff
                 withMean=varargin{2};
+            case {'withmeanse','wmse'} % This is bar and coeff
+                withMeanSE=varargin{2};
+            case {'withcoeff','wc'} % This is bar and coeff
+                withCoeff=varargin{2};
             case {'forcecoefposfactor'}
                 forceCoefPosFactor=varargin{2};
             case {'blackcoefficients'}
@@ -172,7 +185,7 @@ if(not(numericVar))
 end
 
 if(not(edgeBinColor_inInput))
-    
+
     if(cantVars>2)
         edgeBinColor=colors;
     else
@@ -236,6 +249,7 @@ maxValueHist=nan;
 maxValueKernel=nan;
 
 N=cell(cantVars,1);
+catsAux=cell(cantVars,1);
 
 for v=1:cantVars
     var=vars{v};
@@ -253,8 +267,12 @@ for v=1:cantVars
 
             end
         else
-            hists{v}= histogram(var,'facecolor',colors(v,:),'facealpha',alpha(v),'edgecolor',edgeBinColor(v,:),'edgealpha',edgealpha(v),'normalization',normalization,'lineWidth',edgeWidth(v),'linestyle',edgeLinestyle{v});
-
+            if(overlap)
+                hists{v}= histogram(var,'facecolor',colors(v,:),'facealpha',alpha(v),'edgecolor',edgeBinColor(v,:),'edgealpha',edgealpha(v),'normalization',normalization,'lineWidth',edgeWidth(v),'linestyle',edgeLinestyle{v});
+            else
+                [Naux,catsAux{v}]=histcounts(var,'normalization',normalization);
+                N{v}=Naux';
+            end
         end
         if(overlap)
             maxValueHist=max(maxValueHist,max(hists{v}.Values));
@@ -279,10 +297,25 @@ for v=1:cantVars
 end
 
 if(not(overlap))
-    histscBar=bar(bins(1:end-1)',[N{:}],'histc');
-    space=max(1,round(length(bins)/5));
-    set(gca,'XTick',bins(1:space:end));
-    
+    if(numericVars)
+        histscBar=bar(bins(1:end-1)',[N{:}],'histc');
+    else
+        % Check that counts are the same for each cat:
+        cats=catsAux{1};
+        for v=2:cantVars
+            % ToDo: support for vars with different but overlaping
+            % categories.
+            assert(all(cellfun(@(x,y)strcmp(x,y),cats,catsAux{v})))
+        end
+
+        histscBar=bar(1:length(cats),[N{:}],'hist');
+        set(gca,'xtick',1:length(cats));
+        set(gca,'xticklabels',cats);
+    end
+    %numberOfXTicks=9;
+    %space=max(1,round(length(bins)/numberOfXTicks));
+    %set(gca,'XTick',bins(1:space:end));
+
 
     for v=1:cantVars
         histscBar(v).FaceColor=colors(v,:);
@@ -341,8 +374,8 @@ if(withMean)
 
     else
         heightBeta=maxPlot*1.3-(1-forceCoefPosFactor)*maxPlot;
-        leftBeta=limsX(1)+.1*(limsX(2)-limsX(1));
-        rightBeta=limsX(1)+.75*(limsX(2)-limsX(1));
+        leftBeta=limsX(1)+.18*(limsX(2)-limsX(1));
+        rightBeta=limsX(1)+.72*(limsX(2)-limsX(1));
     end
 
     % See were the data is concentrated
@@ -403,19 +436,21 @@ if(withMean)
             se=errorMeanVars(v);
 
             plot(meanVar*[1 1],[0 yLim(2)],'--','color',colors(v,:))
-            tinvV=tinv((1-alphaTest/2),length(vars{v})-1);
+            if(withMeanSE)
+                tinvV=tinv((1-alphaTest/2),length(vars{v})-1);
 
-            plot((meanVar+tinvV*se)*[1 1],[0 yLim(2)],':','color',colors(v,:))
-            plot((meanVar-tinvV*se)*[1 1],[0 yLim(2)],':','color',colors(v,:))
-
-            if(blackCoefficients)
-                colorCoef=.1*[1 1 1];
-            else
-                colorCoef=colors(v,:);
+                plot((meanVar+tinvV*se)*[1 1],[0 yLim(2)],':','color',colors(v,:))
+                plot((meanVar-tinvV*se)*[1 1],[0 yLim(2)],':','color',colors(v,:))
             end
+            if(withCoeff)
+                if(blackCoefficients)
+                    colorCoef=.1*[1 1 1];
+                else
+                    colorCoef=colors(v,:);
+                end
 
-            annotation2('textbox',posCoeffsV(v,:),orientation{v},'String',sprintf('$\\mu$: $%.3f$\n$\\quad(%.3f)$',meanVar,se),'Interpreter','latex','edgecolor','none','color',colorCoef);
-
+                annotation2('textbox',posCoeffsV(v,:),orientation{v},'String',sprintf('$\\mu$: $%.3f$\n$\\quad(%.3f)$',meanVar,se),'Interpreter','latex','edgecolor','none','color',colorCoef);
+            end
 
         end
     end
@@ -470,9 +505,9 @@ if(not(isempty(varLabels))&&not(isempty(varLabels{1})))
         locLeg='northeast';
     end
     if(overlap)
-    legend([hists{:}],varLabels,'interpreter','latex','location',locLeg);
+        legend([hists{:}],varLabels,'interpreter','latex','location',locLeg);
     else
-    legend(histscBar,varLabels,'interpreter','latex','location',locLeg);
+        legend(histscBar,varLabels,'interpreter','latex','location',locLeg);
     end
 end
 

@@ -35,7 +35,7 @@ caption='';
 note='';
 label='';
 latexScale=.7;
-updatelegend=false;
+updatelegend=true;
 includeRelativePath=false;
 includeExternalRelativePath=false;
 externalRelativePath='';
@@ -158,18 +158,23 @@ if(~noAxisChange)
     %set(gca_,'fontname','times')
     
     % Look for acentos:
-    in={'\''a','\''e','\''i','\''o','\''u','\~n'};
-    out={'á','é','í','ó','ú','ñ'};
+    out={'á','é','í','ó','ú','ñ','º'};
+    in={'\''a','\''e','\''i','\''o','\''u','\~n','$^{\circ}$'};
+    
 
     xticklabels(replace(xticklabels,[out,upper(out)],[in,upper(in)]));
     yticklabels(replace(yticklabels,[out,upper(out)],[in,upper(in)]));
     xlabel(replace(get(get(gca_,'xlabel'),'string'),[out,upper(out)],[in,upper(in)]));
     ylabel(replace(get(get(gca_,'ylabel'),'string'),[out,upper(out)],[in,upper(in)]));
     title(replace(get(get(gca_,'title'),'string'),[out,upper(out)],[in,upper(in)]));
+    subtitle(replace(get(get(gca_,'subtitle'),'string'),[out,upper(out)],[in,upper(in)]));
     
     set(findall(gcf_, 'Type', 'Text'),'Interpreter', 'Latex')
     if(updatelegend)
+        hLeg=findobj(gcf_,'type','legend');
+        if(not(isempty(hLeg)))
         set(legend,'interpreter','latex')
+        end
     end
     
     % Check if is TitledChartLayaout

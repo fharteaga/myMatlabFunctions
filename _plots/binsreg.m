@@ -1,31 +1,41 @@
 function p=binsreg(x,y,varargin)
-% BINSREG plot mean of y conditional on x
+% BINSREG plot mean of y conditional on x(:,1) residualized by x(:,2:end)
 %   P = BINSREG(x,y,varargin)
 %
 %
 %% Inputs:
-%   x: (numeric) indep variable
-%   y: (numeric) dep variable
+%   x: (numeric) indep variable(s). Can be NxJ, column 1 is plotted in the
+%       horizontal axis. Columns 2 to J are used to
+%       residualized the dep var (ie. as controls). Included controls are
+%       de-meaned prior estimation. Results are for an "average"
+%       observation in term of the controls.
 %
+%   y: (numeric) dep variable
 %% Output:
-%   p: (plot?)
+%   p: (struct) inlcudes many objects used to construct the plot
 %
 %% Optional inputs:
 %   binStrategy ('quantile-spaced'): (text) defines how to construct the bins
-%        'equally-spaced' 'saturated' 'quantile-spaced' 'custom'
+%       'equally-spaced' 'saturated' 'quantile-spaced' 'custom'
 %
+%   absorvedControls: (numeric): dep variables that are not included in the
+%       regressions. x and y are residualized before estimation (FWL). SEs
+%       are corrected to reflect the real degree of freedom.
 %% Examples:
-%  binsref(x,y)
+%  binsreg(x,y)
 %
 %  See also PLOTRD
 %
 %   F. Arteaga (fharteaga 'at' gmail)
 
+
+
 nBins=10;
-markerSize=50;
+markerSize=50; % Actual size varies depending on number of obs per bin. But this parametere sets the "scale"
 removeNans=true;
 binStrategy='quantile-spaced'; % 'equally-spaced' 'saturated' 'quantile-spaced' 'custom'
-% 'binStrategy', 'equally-spaced'
+
+
 
 if(not(isa(x,'double')))
     x=double(x);
@@ -42,11 +52,12 @@ withQuantiles=false;
 withIQRange=false;
 quantileInf=.25;
 quantileSup=.75;
-modifyXTicks=false; % Put the values of the quantiles
+modifyXTicks=false; % Put the values of the quantiles if is set to true.
+
+absorvedControls=nan(1,0); % must have 0 columns if there are no absorved controls
 
 
-
-posCoeffFit=[.60 .80 .1 .1];
+posCoeffFit=[.60 .80];
 markerEdgeColor=linspecer(1);
 markerFaceColor=linspecer(1);
 markerFaceAlpha=.1;
@@ -61,7 +72,8 @@ w=ones(size(y));
 
 preB=nan; % This is the bin id for the "custom" binStrategy
 
-assert(length(x)==length(y),'Vectors must have the same size')
+assert(size(x,1)==size(y,1),'Inputs must have the same size')
+assert(size(y,2)==1,'y must be a column vector')
 
 if(~isempty(varargin))
 
@@ -73,7 +85,7 @@ if(~isempty(varargin))
                 w = varargin{2};
             case {'bs','binstrategy'}
                 binStrategy = varargin{2};
-            case {'nb','numberbins'}
+            case {'nb','numberbins','nbins'}
                 nBins = varargin{2};
             case {'marker'}
                 marker = varargin{2};
@@ -94,7 +106,7 @@ if(~isempty(varargin))
                 modifyXTicks = varargin{2};
             case {'wh','withhistogram'}
                 withHistogram = varargin{2};
-            case {'we','witherrorbars'}
+            case {'we','web','witherrorbars'}
                 withErrorBars = varargin{2};
             case {'wlf','withlinearfit'}
                 withLinearFit = varargin{2};
@@ -103,7 +115,6 @@ if(~isempty(varargin))
             case {'plotquantiles','withquantiles'}
                 withQuantiles=varargin{2};
             case {'quantiles'}
-
                 assert(isnumeric(varargin{2}))
                 assert(numel(varargin{2})==2)
                 assert(all(varargin{2}>=0&varargin{2}<=1))
@@ -122,6 +133,8 @@ if(~isempty(varargin))
                 posCoeffFit = varargin{2};
             case {'preb'}
                 preB = varargin{2};
+            case {'absorvedcontrols','ac'}
+                absorvedControls = varargin{2};
             otherwise
                 error(['Unexpected option: ',varargin{1}])
         end
@@ -129,6 +142,17 @@ if(~isempty(varargin))
     end
 end
 
+if(not(isempty(absorvedControls)))
+
+    assert(size(absorvedControls,1)==size(y,1),'Inputs must have the same size')
+
+    if(not(isa(absorvedControls,'double')))
+        absorvedControls=double(absorvedControls);
+    end
+    withAbsorvedControls=true;
+else
+    withAbsorvedControls=false;
+end
 
 assert(not(withIQRange)||not(withQuantiles),'You cannot plot inter-quartile-range and quantiles at the same time, sorry!')
 if(withIQRange)
@@ -139,21 +163,22 @@ end
 
 p=struct;
 if(removeNans)
-    remove=any(isnan([x,y]),2);
+    remove=any(isnan([x,y,absorvedControls]),2);
     if(any(remove))
         cprintf('*systemcommand','[binsreg.m Unofficial Warning] ')
         cprintf('systemcommand','%.2f %% of obervations (%i of %i) are used in estimation\n',(1-mean(remove))*100,sum(not(remove)),length(remove))
         x=x(not(remove),:);
         y=y(not(remove),:);
         w=w(not(remove),:);
+        if(withAbsorvedControls)
+            absorvedControls=absorvedControls(not(remove),:);
+        end
         assert(all(not(isnan(w))))
     end
 end
-p.obsN=length(x);
+p.obsN=length(y);
 
 nBinsOrig=nBins;
-assert(size(y,1)==size(x,1))
-
 
 controls=x(:,2:end); % If no controls, this still works.
 x=x(:,1);
@@ -164,7 +189,8 @@ x=x(:,1);
 uniqueX=unique(x);
 if(not(strcmp(binStrategy,'saturated'))&&length(uniqueX)<nBins)
     cprintf('*systemcommand','[binsreg.m Unofficial Warning] ')
-    cprintf('systemcommand','Not enough dispertion in x to get %i bins. saturated strategy is used instead!\n',nBinsOrig,nBins)
+    cprintf('systemcommand','Not enough dispertion in x to get %i bins (only %i unique values). saturated strategy is used instead!\n',nBins,length(uniqueX))
+    binStrategy='saturated';
 end
 
 
@@ -234,7 +260,6 @@ switch binStrategy
             preB=preB(not(remove));
         end
         assert(all(not(isnan(preB))))
-
         assert(all(size(preB)==size(y)))
 
 
@@ -246,28 +271,88 @@ end
 uniquePreB=unique(preB);
 nBins=length(uniquePreB);
 p.nBins=nBins;
-%% Non-parametric E[Y|x]
+
 b=nan(size(x,1),nBins);
 for i=1:nBins
     b(:,i)=preB==uniquePreB(i);
 end
 binsWithObs=sum(b,1)>0;
-% Non paremetric regression (binscatter)
 b_withObs=b(:,binsWithObs);
-preU=fitlm([b_withObs,controls],y,'intercept',false,'weights',w);
+b_withObs_orig=b_withObs;
 
-se=preU.Coefficients.SE(1:nBins);
-u=preU.Coefficients.Estimate(1:nBins); % The rest are the estimates for the controls;
+% Ignore first column (I'm going to add an intercept)
+b_withObs=b_withObs(:,2:end);
+
+if(false)
+    %% Check if the estimates are correct
+    % Results (param ans SEs!) should be very similar to this ones:
+    controls2=controls-mean(controls);
+    absorvedControls2=absorvedControls-mean(absorvedControls);
+    preU_old=fitlm([b_withObs_orig,controls2,absorvedControls2],y,'intercept',false,'weights',w);
+    preU_old2=fitlm([ones(size(b_withObs_orig,1),1),b_withObs_orig(:,2:end),controls2,absorvedControls2],y,'intercept',false,'weights',w);
+end
+
+x_orig=x;
+meanY=mean(y);
+meanX=mean(x);
+if(withAbsorvedControls)
+    % Residualize absorved controls (so we plot for the "mean obs")
+    absorvedControls=absorvedControls-mean(absorvedControls,1);
+    % Residualize "y", "x" and "controls" wrt "absorved controls"
+    AX=[ones(p.obsN,1) absorvedControls];
+    y=y-AX*((AX'*AX)\(AX'*y)); % This is needed only to get the right S.E.
+    x=x-AX*((AX'*AX)\(AX'*x));
+    controls=controls-AX*((AX'*AX)\(AX'*controls));
+    b_withObs=b_withObs-AX*((AX'*AX)\(AX'*b_withObs));
+else
+    % Residualize "y", "x", and "controls" wrt the mean
+    y=y-meanY;
+    x=x-meanX; % This is not necessary, but doesn't hurt.
+    controls=controls-mean(controls,1);
+end
+
+%% Non-parametric E[Y|x]
+
+%preU=fitlm([ones(size(x,1),1),b_withObs,controls],y,'intercept',false,'weights',w);
+%u=M*preU.Coefficients.Estimate(1:nBins); % The rest are the estimates for the controls;
+% Mean correction:
+% meanXBeta=mean([b_withObs_orig(:,2:end),controls],1)*preU.Coefficients.Estimate(2:end);
+% u=u+meanY-meanXBeta; % mean(yhat) is not zero when there are absorved controls.
+
+% Trick to get the intercept right (add meanY and alpha + meanXbeta to each side, since
+% those are the same!)
+if(withAbsorvedControls)
+preU=fitlm([ones(size(x,1),1),b_withObs+mean(b_withObs_orig(:,2:end)),controls],y+meanY,'intercept',false,'weights',w);
+else
+preU=fitlm([ones(size(x,1),1),b_withObs,controls],y+meanY,'intercept',false,'weights',w);
+end
+M=eye(nBins);
+M(:,1)=1;
+u=M*preU.Coefficients.Estimate(1:nBins); % The rest are the estimates for the controls;
+
+if(withAbsorvedControls)
+    % Correction for DFE
+    V=preU.CoefficientCovariance(1:nBins,1:nBins)*(preU.DFE/(preU.DFE-(size(absorvedControls,2))));
+
+else
+    V=preU.CoefficientCovariance(1:nBins,1:nBins);
+end
+
+se=sqrt(diag(M*V*M'));
+
+
 p.yvalues=u;
+p.nonParamReg=preU;
 
-if(size(controls,2)==0)
+
+if(size(controls,2)==0&&size(absorvedControls,2)==0)
     p.quantileInf=nan(nBins,1);
     p.quantileSup=nan(nBins,1);
 
     for j=1:nBins
 
-        p.quantileInf(j)=quantile(y(b_withObs(:,j)==1),quantileInf);
-        p.quantileSup(j)=quantile(y(b_withObs(:,j)==1),quantileSup);
+        p.quantileInf(j)=quantile(y(b_withObs_orig(:,j)==1)+meanY,quantileInf);
+        p.quantileSup(j)=quantile(y(b_withObs_orig(:,j)==1)+meanY,quantileSup);
 
     end
 
@@ -276,12 +361,18 @@ end
 
 %% Paremetric regression (linear fit)
 
-parReg=fitlm([ones(size(x,1),1),x,controls],y,'intercept',false,'weights',w);
-alpha=parReg.Coefficients.Estimate(1);
+parReg=fitlm([ones(size(x,1),1),x+meanX,controls],y+meanY,'intercept',false,'weights',w);
+%alpha=parReg.Coefficients.Estimate(1);
 beta=parReg.Coefficients.Estimate(2);
+alpha=parReg.Coefficients.Estimate(1);
 betaSE=parReg.Coefficients.SE(2);
+if(withAbsorvedControls)
+    % Correction for DFE
+    betaSE=betaSE*sqrt(parReg.DFE/(parReg.DFE-(size(absorvedControls,2))));
 
+end
 
+p.paramReg=parReg;
 
 %% Binscatter
 
@@ -298,10 +389,10 @@ end
 %xBins=edges(1:end-1)*.5+edges(2:end)*.5;
 % Weighted center of bin:
 NByBin=sum(b(:,binsWithObs),1);
-xBins=x'*b(:,binsWithObs)./NByBin;
+xBins=x_orig'*b(:,binsWithObs)./NByBin;
 
 if(withErrorBars)
-    errorbar(xBins,u,1.96*se,'.')
+    errorbar(xBins,u,tinv(.975,preU.DFE-size(absorvedControls,2))*se,'.')
     hold on
 end
 p.xvalues=xBins;
@@ -311,7 +402,10 @@ end
 if(withLinearFit)
     % Plot linear fit
     hold on
-    p.linearFitPlot=fplot(@(x)alpha+beta*x,[min(x) max(x)],'--','color',fitColor);
+
+    xLF=[min(x_orig) max(x_orig)];
+    yLF=alpha+beta*xLF;
+    p.linearFitPlot=plot(xLF,yLF,'--','color',fitColor);
     %annotation('textbox',posCoeffFit,'String',sprintf('$\\beta: %.3f\\quad(%.3f)$',beta,betaSE),'FitBoxToText','on','Interpreter','latex','edgecolor','none','color',fitColor)
 
 end

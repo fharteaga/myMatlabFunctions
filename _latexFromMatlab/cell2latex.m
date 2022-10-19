@@ -59,6 +59,11 @@ alignment=nan;
 includeExternalRelativePath=false;
 externalRelativePath='';
 positionParameter='htbp'; % h! or H for right here!
+withFontSizeTable=false;
+fontSizeTable='\footnotesize';
+avoidPvalsNote=false; % Avoid adding stars pvals to footnote if stars al added to the table.
+
+
 
 fixTitleCase=false;
 
@@ -101,6 +106,8 @@ if(~isempty(varargin))
                 footNoteType=varargin{2};
             case{'sizefootnotefloat'}
                 sizeFootnoteFloat=varargin{2};
+            case{'avoidpvalsnote'}
+                avoidPvalsNote=varargin{2};
             case 'contopybottom'
                 withTopAndBottom=varargin{2};
             case {'incluirpvals','incluirpvalsnote'}
@@ -130,6 +137,9 @@ if(~isempty(varargin))
             case {'verticaladjustparam'}
                 verticalAdjustParam=varargin{2};
                 assert(isnumeric(alignment))
+            case {'fontsizetable'}
+                fontSizeTable=varargin{2};
+                withFontSizeTable=true;
             case {'withadjust','adjust'}
                 withAdjust=varargin{2};
             case {'standarderrors','stderrs','stderr','ses'}
@@ -260,7 +270,11 @@ for c=1:4
     end
 end
 
-
+if(withFontSizeTable)
+preFontSizeTable='';
+else
+preFontSizeTable='..comment..';
+end
 
 if(conPrimeraColumna)
     anchoPrimeraColumna=size(primeraColumna,2);
@@ -392,8 +406,9 @@ end
 % Agrega estrellas
 if(withStars)
     assert(all(size(stars)==size(cellImprimir)))
+    if(not(avoidPvalsNote))
     incluirPValsNote=true;
-    
+    end
     
     newCell=cell(size(cellImprimir).*[1,2]);
     newCell(:,1:2:end)=cellImprimir;
@@ -726,7 +741,7 @@ newlineFootnote='';
         environmentTableNotesBottom='';
 end
 
-preFootnote='..comment..';
+preFootnote=''; % footnote is more complex than just adding one commented line...
 if(incluirPValsNote||conFootnote)
     
     if(conFootnote)
@@ -790,7 +805,7 @@ if(withTopAndBottom)
     end
     
         
-    if(not(isempty(label))||not(isempty(titulo))||true)% Apparently is mandatory
+    if(not(isempty(label))||not(isempty(titulo)))% Apparently is mandatory.. apparently not!
         if(fixTitleCase&&not(isempty(titulo)))
             apiKey='';
             titulo=char(pyrunfile(sprintf("titleCaseConverter.py '%s' '%s'",titulo,apiKey),'r'));
@@ -807,7 +822,7 @@ if(withTopAndBottom)
         tit,...
         topAdj,newline,...
         preFootnote,environmentTableNotesTop,newlineFootnote,...
-        '..comment..\footnotesize',newline,...
+        preFontSizeTable,fontSizeTable,newline,...
         '\begin{tabular}{',sprintf('%s',alignmentFirstCol{:}),sprintf('%s',alignment{:}),'}',newline,...
         '\addlinespace',newline,...
         '\toprule',newline);%,...);widthPrimeraCol

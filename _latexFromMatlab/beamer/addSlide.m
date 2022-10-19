@@ -99,7 +99,7 @@ for f=1:length(figures)
     while(ismember(fileName,files)&&counter<100)
         counter=counter+1;
         extensionPos=find(fig.file=='.',1,'last');
-        fileName=sprintf('%s_%i.%s',fig.file(1:extensionPos-1),counter,fig.file(extensionPos+1,end));
+        fileName=sprintf('%s_%i.%s',fig.file(1:extensionPos-1),counter,fig.file(extensionPos+1:end));
      end
    assert(counter<100)
        

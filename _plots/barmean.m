@@ -7,6 +7,9 @@ includeAll=true;
 alphaTest=0.05;
 testDifferencesInMean=true;
 plotPValDifferences=true;
+plotSEMean=true;
+plotEmptyBox=false;
+heightEmptyBox=1;
 minPValForPlottingDifference=0.05;
 colors=linspecer(2);
 colorSE=colors(2,:);
@@ -30,6 +33,10 @@ if(~isempty(varargin))
                 minPercentageToShow = varargin{2};
             case {'plotpvaldifferences','pdiff'}
                 plotPValDifferences = varargin{2};
+            case {'plotsemean','pse'}
+                plotSEMean = varargin{2};
+            case {'plotemptybox','pse'}
+                plotEmptyBox = varargin{2};
             case {'testdifferencesinmean','tdiff'}
                 testDifferencesInMean = varargin{2};
                 case {'minpvalforplottingdifference'}
@@ -44,6 +51,18 @@ if(~isempty(varargin))
         varargin(1:2) = [];
     end
 end
+
+% Check if there is more than one x:
+if(iscellstr(nameVarX))
+
+    if(length(nameVarX)==1)
+        nameVarX=nameVarX{1};
+    else
+        [tabla,varNameCombined]=combineDiscreteVars(tabla,nameVarX);
+        nameVarX=varNameCombined;
+    end
+end
+
 
 assert(istable(tabla))
 assert(ischar(nameVarX))
@@ -151,11 +170,22 @@ else
     xticksPos=1:length(xs);
 end
 
-bar(xticksPos,height, 'FaceColor',colorBar,'FaceAlpha',1,'edgeColor','none','horizontal',horz);
-hold on
+if(plotEmptyBox)
 
+bar(xticksPos,ones(size(xticksPos))*heightEmptyBox, 'FaceColor','none','EdgeColor',.5*[1 1 1],'LineStyle','--','horizontal',horz);
+hold on
+end
+
+bar(xticksPos,height, 'FaceColor',colorBar,'FaceAlpha',1,'edgeColor',[1 1 1],'horizontal',horz);
+if(plotEmptyBox)
+    hold off
+end
+if(plotSEMean)
+hold on
 errorbar(xticksPos,height,radioInterval,'lineStyle','none','color',colorSE)
 hold off
+end
+
 
 
 minPercentageToShow=minPercentageToShow*max(abs(height));
@@ -223,10 +253,15 @@ if(plotPValDifferences)
     end
     
     % Si no, al exportarlo el pvalue queda fuera del frame
-    if(any(anyOfLevel))
+    if(any(anyOfLevel)||plotEmptyBox)
         ylim(ylim+[0 .1*diff(ylim)])
     end
     
+else
+    if(plotEmptyBox)
+        ylim(ylim+[0 .05*diff(ylim)])
+    end
+
 end
 
 

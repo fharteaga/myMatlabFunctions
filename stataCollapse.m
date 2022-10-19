@@ -237,8 +237,8 @@ for j=1:cantVars
                 categoriesCell{j,3}=isordinal(test);
                 categoriesCell{j,4}=not(ismember(whichstats{j},categoriesStatsDoNotConvertBack));
             else
-                cprintf('*systemcommand','[stataCollapse.m Unofficial Warning] ')
-                cprintf('systemcommand','Varible %s is a %s (not a double), it is being converted!\n',varsNameToCollapse{j},class(test))
+                %cprintf('*systemcommand','[stataCollapse.m Unofficial Warning] ')
+                %cprintf('systemcommand','Varible %s is a %s (not a double), it is being converted!\n',varsNameToCollapse{j},class(test))
             end
         end
     else
