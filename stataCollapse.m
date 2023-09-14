@@ -107,6 +107,9 @@ end
 
 
 % Chequea que haya un id (o un set!)
+if(isstring(idVarName))
+idVarName=cellstr(idVarName);
+end
 assert(ischar(idVarName)||iscellstr(idVarName))
 assert(all(not(ismember(idVarName,varsNameToCollapse))),'id vars cannot be collapsed')
 
@@ -333,6 +336,9 @@ if(mergeWithOriginal)
     if(not(ischar(idVarName)))
         dataToCollapse.id__=[];
     end
+
+    
+    
     
     % Check that new variables do not exist in original
     cantSameVars=sum(ismember(dataCollapsed.Properties.VariableNames,dataToCollapse.Properties.VariableNames));
@@ -343,6 +349,11 @@ if(mergeWithOriginal)
     
     dataCollapsed=sortrows(dataCollapsed,'auxSort__');
     dataCollapsed.auxSort__=[];
+
+    % If withCount, then erase the var
+    if(withCount)
+dataCollapsed.(countVarName)=[];
+    end
 end
 
 %% Create Latex Table

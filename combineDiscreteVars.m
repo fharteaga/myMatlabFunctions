@@ -1,8 +1,13 @@
-function [tablaOut,varNameCombined]=combineDiscreteVars(tablaIn,varNames,varargin)
-% Agrega una variable ("combined") a la tabla.
+function [out,varNameCombined]=combineDiscreteVars(tablaIn,varNames,varargin)
+% Generates a variable that represents unique values for the table or array.
 
-% tablaIn puede ser un array tb. En ese caso, dejar varNames en blanco.
-varNameCombined='combined';
+% Output is the new variable. Is a table if output='variable'
+
+output='variable'; % table or variable
+varNameCombined='combined'; % Only if output=='table'
+withMissingWarningMessage=true;
+omitMissings=true;
+
 
 if(~isempty(varargin))
 
@@ -11,8 +16,14 @@ if(~isempty(varargin))
 
     while ~isempty(varargin)
         switch lower(varargin{1})
-            case {'varnamecombined'}
+            case {'namevarcombined','varnamecombined'}
                 varNameCombined= varargin{2};
+            case{'withmissingwarningmessage'}
+                withMissingWarningMessage= varargin{2};
+            case{'omitnans','omitmissings'}
+                omitMissings=varargin{2};
+            case{'output'}
+                output=varargin{2};
             otherwise
                 error(['Unexpected option: ' varargin{1}])
         end
@@ -30,14 +41,28 @@ if(not(istable(tablaIn)))
         varNames{w}=sprintf('var%i',w);
         tablaIn.(varNames{w})=arrayIn(:,w);
     end
+else
+    if(isempty(varNames))
+        varNames=tablaIn.Properties.VariableNames;
+    end
 end
 
-varsT=tablaIn.Properties.VariableNames;
-
-assert(not(ismember(varNameCombined,varsT)))
 assert(allunique(varNames))
 
-[unicos,~,ic]=unique(tablaIn(:,varNames),'rows');
+rowWithMissing=any(ismissing(tablaIn(:,varNames)),2);
+if(any(rowWithMissing))
+    if(omitMissings)
+        if(withMissingWarningMessage)
+            cprintf('*systemcommand','[combineDiscreteVars.m Unofficial Warning] ')
+            cprintf('systemcommand','%.2f %% of observations (%i of %i) contain missings in at least one of the variables\n',mean(rowWithMissing)*100,sum(rowWithMissing),length(rowWithMissing))
+        end
+    else
+
+        error('%.2f %% of observations (%i of %i) contain missings in at least one of the variables\n',mean(rowWithMissing)*100,sum(rowWithMissing),length(rowWithMissing))
+    end
+end
+
+[unicos,~,ic]=unique(tablaIn(not(rowWithMissing),varNames),'rows');
 
 if(length(varNames)==2)
     newUnicos=categorical(arrayfun(@(x,y)sprintf('%s - %s',x,y),categorical(unicos.(varNames{1})),categorical(unicos.(varNames{2})),'UniformOutput',false));
@@ -51,8 +76,17 @@ end
 
 
 
-tablaOut=tablaIn;
+varComb=categorical(nan(height(tablaIn),1));
+varComb(not(rowWithMissing))=newUnicos(ic);
 
-tablaOut.(varNameCombined)=newUnicos(ic);
-tablaOut.Properties.VariableDescriptions{varNameCombined}=varDescription;
+if(strcmpi(output,'table'))
+    assert(not(ismember(varNameCombined,tablaIn.Properties.VariableNames)))
+    tablaIn.(varNameCombined)=varComb;
+    tablaIn.Properties.VariableDescriptions{varNameCombined}=varDescription;
+    out=tablaIn;
+elseif(strcmpi(output,'variable'))
+    out=varComb;
+else
+    error('aca')
+end
 

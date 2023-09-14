@@ -11,7 +11,7 @@ if(~isempty(varargin))
     
     while ~isempty(varargin)
         switch lower(varargin{1})
-            case {'correlativevarname'}
+            case {'correlativevarname','varname'}
                 correlativeVarName= varargin{2};
                 
             otherwise
@@ -31,9 +31,6 @@ tabla.correlative__=(1:height(tabla))';
 
 tabla=stataCollapse(idVarName,tabla,'correlative__','min','mergeWithOriginal',true);
 tabla.(correlativeVarName)=tabla.correlative__-tabla.correlative___min+1;
-
-
-
 
 tabla=sortrows(tabla,'order__');
 tabla.order__=[];

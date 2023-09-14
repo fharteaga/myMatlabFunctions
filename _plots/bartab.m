@@ -1,14 +1,19 @@
 function bartab(tabla,nameVarX,nameVarY,varargin)
 
 horz=false; % en progreso, not ready yet
+reverseYAxisIfHorizontal=true;
 withNBar=false;
 minPercentageToShow=.1;
 includeAll=true;
 withLegend=true;
 withLegendTitle=true;
 locLegend='';
-%binary=false;
-%binaryValue=1;
+legendBox='on';
+legendColumns=1;
+flipColors=false;
+reversYAxis=false;
+colors=[];
+
 
 if(~isempty(varargin))
     % This checks a few things, also if there is struct called "opts"
@@ -24,10 +29,20 @@ if(~isempty(varargin))
                 withLegend = varargin{2};
             case {'withlegendtitle','wlt'}
                 withLegendTitle = varargin{2};
-            case 'loclegend'
+            case {'legendlocation','loclegend'}
                 locLegend = varargin{2};
             case {'minpercentagetoshow','mps'}
                 minPercentageToShow = varargin{2};
+            case {'flipcolors'}
+                flipColors = varargin{2};
+            case {'legendbox'}
+                legendBox= varargin{2};
+            case {'legendcolumns'}
+                legendColumns= varargin{2};
+            case {'colors'}
+                colors= varargin{2};
+            case {'reversyaxis'}
+                reversYAxis= varargin{2};
             otherwise
                 error(['Unexpected option: ' varargin{1}])
         end
@@ -156,8 +171,8 @@ if(horz)
     br=barh(xticksPos,table2array(bart(:,2:end))','stacked', 'FaceColor','flat','FaceAlpha',0.9,'edgeColor','none');
     yticks(xticksPos)
     yticklabels(xsBar)
-    set(gca, 'YDir','reverse')
-    set(gca, 'XDir','reverse')
+    
+    %set(gca, 'XDir','reverse')
 
 else
 
@@ -174,7 +189,29 @@ else
     % Add a line that separates total??
 end
 
-[colorsBar,colorsAnnotation]=linspecerGrayproof(height(bart),'dispersion',.2);
+if((reverseYAxisIfHorizontal&&horz)||reversYAxis)
+    set(gca, 'YDir','reverse')
+end
+
+if(~isempty(colors)&&size(colors,1)==height(bart))
+    colorsBar=colors;
+    colorsAnnotation=nan(size(colors));
+    for i=1:size(colors,1)
+        color=rgb2gray(colors(i,:));
+        if(color(1)>.5)
+            colorsAnnotation(i,:)=[0 0 0];
+        else
+            colorsAnnotation(i,:)=[1 1 1];
+        end
+    end
+else
+    [colorsBar,colorsAnnotation]=linspecerGrayproof(height(bart),'dispersion',.2);
+end
+
+if(flipColors)
+    colorsBar=colorsBar(end:-1:1,:);
+    colorsAnnotation=colorsAnnotation(end:-1:1,:);
+end
 for i=1:height(bart)
     br(i).CData = colorsBar(i,:);
 end
@@ -217,8 +254,12 @@ else
     ylabel('Fraction')
     set(gca,'yTick',[]);
 end
+if(horz)
+textLegend=categorical(bart.value);
+else
+    textLegend=categorical(bart.value(end:-1:1));
+end
 
-textLegend=categorical(bart.value(end:-1:1));
 maxLength=max(cellfun(@length,categories(textLegend)));
 
 if(withLegend)
@@ -231,7 +272,13 @@ if(isempty(locLegend))
     end
 end
 
-lgd=legend(br(end:-1:1),textLegend,'location',locLegend); % southoutside eastoutside
+if(reversYAxis)
+lgd=legend(br,textLegend(end:-1:1),'location',locLegend,'box',legendBox,'numColumns',legendColumns); % southoutside eastoutside
+elseif(horz)
+lgd=legend(br,textLegend,'location',locLegend,'box',legendBox,'numColumns',legendColumns); % southoutside eastoutside
+else
+lgd=legend(br(end:-1:1),textLegend,'location',locLegend,'box',legendBox,'numColumns',legendColumns); % southoutside eastoutside
+end
 if(withLegendTitle)
 title(lgd,labelVarY)
 end

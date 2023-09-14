@@ -127,6 +127,8 @@ for c=1:cantVars
                 funC{c}=@(x)getItemInPos(x,2,true);
             case 'third'
                 funC{c}=@(x)getItemInPos(x,3,true);
+            case 'mode'
+                funC{c}=@mode;
             otherwise
                 error('stat not valid for numeric input')
         end
@@ -245,7 +247,7 @@ else
     if(numericV)
         value=nan;
     else
-        value={};
+        value={[]};
     end
 end
 end

@@ -1,5 +1,5 @@
 function [pickedAlternatives,pickedByCat,subCatOrderPick,foundTotalPerCat,totalPicked]=picker(alternatives,catAlternatives,picksPerCat,tieBreakerCats,randomTieBreakerCats,totalPicks,fillingCat)
-% RDROBUST run rdrobust command in stata 
+% PICKER picks alternatives within a set 
 %   [...] = PICKER(alternatives,catAlternatives,picksPerCat,tieBreakerCats,randomTieBreakerCats,totalPicks,fillingCat)
 %   
 %   It chooses "picksPerCat" options between the "alternatives" who are

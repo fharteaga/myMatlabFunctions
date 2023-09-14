@@ -171,7 +171,9 @@ if(~noAxisChange)
     
     set(findall(gcf_, 'Type', 'Text'),'Interpreter', 'Latex')
     if(updatelegend)
+        
         hLeg=findobj(gcf_,'type','legend');
+        hLeg.String=replace( hLeg.String,[out,upper(out)],[in,upper(in)]);
         if(not(isempty(hLeg)))
         set(legend,'interpreter','latex')
         end

@@ -1,7 +1,7 @@
 function tx=annotation2(type,pos,orientation,varargin)
 
 % annotation2('textbox',[x,y],'n','String','holaaa')
-
+axisH={};
 switch lower(type)
     case 'textbox'
         switch lower(orientation)
@@ -49,7 +49,15 @@ switch lower(type)
         error('No programaodoo!')
 end
 
+[esta,posA]=ismember({'axisPlot'},varargin(1:2:end));
+if(esta)
+axisPlot=varargin{posA*2};
+varargin(posA*2-1:posA*2)=[];
+else
+axisPlot=gca;
+end
 
-tx=text('Position',pos,'verticalAlignment',vAlig,'HorizontalAlignment',hAlig,varargin{:});
+
+tx=text(axisPlot,'Position',pos,'verticalAlignment',vAlig,'HorizontalAlignment',hAlig,varargin{:});
 
 

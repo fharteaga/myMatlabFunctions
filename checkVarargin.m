@@ -9,7 +9,7 @@ assert(size(cellVarargin,1)==1)
 
 
 % Check that number is even ( optionName, optionValue)
-assert(mod(length(cellVarargin),2)==0,'Si agregai opciones, ponle el tipo!')
+assert(mod(length(cellVarargin),2)==0,'Optional inputs should come in pairs: ,{optionName},{optionValue} ')
 
 % Checks if one of the options is a struct called "opts"
 [is,pos]=ismember('opts',cellVarargin(1:2:end));

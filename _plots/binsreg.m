@@ -164,6 +164,7 @@ end
 p=struct;
 if(removeNans)
     remove=any(isnan([x,y,absorvedControls]),2);
+    assert(any(~remove))
     if(any(remove))
         cprintf('*systemcommand','[binsreg.m Unofficial Warning] ')
         cprintf('systemcommand','%.2f %% of obervations (%i of %i) are used in estimation\n',(1-mean(remove))*100,sum(not(remove)),length(remove))

@@ -40,6 +40,7 @@ incluirPValsNote=false;
 agregarColumnasFantasma=false;
 agregarFilasFantasma=false;
 conPrimeraColumna=false;
+useCellFirstColumnAsFirstColumn=false; % firstColumns=cellImprimir(:,1);
 conFootnote=false;
 footNoteType='float'; % float: \floatfoot{\scriptsize ...} or tablenotes: \begin{tablenotes} .. \item .. \end{tablenotes} (la primera es ancho de página y la segunda es ancho de tabla)
 sizeFootnoteFloat='\footnotesize'; %\footnotesize or \scriptsize
@@ -126,6 +127,8 @@ if(~isempty(varargin))
                 conPrimeraColumna=true;
                 primeraColumna=varargin{2};
                 assert(iscellstr(primeraColumna)||all(isstring(primeraColumna),'all'));
+			case{'usecellfirstcolumnasfirstcolumn'}
+				useCellFirstColumnAsFirstColumn = varargin{2};
             case {'alignmentfirstcol'}
                 alignmentFirstCol=varargin{2};
                 if(ischar(alignmentFirstCol))
@@ -133,7 +136,7 @@ if(~isempty(varargin))
                 end
             case {'alignment'}
                 alignment=varargin{2};
-                assert(iscellstr(alignment)||all(isstring(alignment),'all'))
+                assert(iscellstr(alignment)||all(isstring(alignment),'all')) % Cannot be just char!
             case {'verticaladjustparam'}
                 verticalAdjustParam=varargin{2};
                 assert(isnumeric(alignment))
@@ -186,6 +189,14 @@ if(~isempty(varargin))
         end
         varargin(1:2) = [];
     end
+end
+
+if(useCellFirstColumnAsFirstColumn)
+    assert(not(conPrimeraColumna))
+    assert(size(cellImprimir,2)>1)
+    primeraColumna=cellImprimir(:,1);
+    cellImprimir=cellImprimir(:,2:end);
+    conPrimeraColumna=true;
 end
 
 assert(not(contains(label,'_')),'Labels of latex tables cannot contain "_"')

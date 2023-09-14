@@ -3,10 +3,10 @@
 % o en cualquier subfolder
 
 
-rootFolder='/Users/felipe/Dropbox/';
+rootFolder='/Users/felipe/Library/CloudStorage/Dropbox/';
 
-new="paths=split(genpath([myDir,'/myMatlabFunctions/']),':');paths=paths(~contains(paths,{'/.','\.'}));addpath(paths{:});clearvars('paths');";
-old="paths=split(genpath([myDir,'/myMatlabFunctions/']),':');paths=paths(~contains(paths,{'/.','\.'}));addpath(paths{:});clearvars('paths');";
+new="myDir='/Users/felipe/Library/CloudStorage/Dropbox/';";
+old="myDir='/Users/felipe/Dropbox/';";
 
 % Buca todos los mFiles en carpetas no ocultas:
 foldersToCheck={rootFolder};

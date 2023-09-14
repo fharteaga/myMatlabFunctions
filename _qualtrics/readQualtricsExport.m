@@ -1,10 +1,14 @@
 function data=readQualtricsExport(xlsxfile,varargin)
 %
 % This function does a lot of things:
-% (1) read the date from XLSX export of qualtrics
-% (2) export and XLS to rename, re-describe and drop variables
-% (3) export and XLS to transalte the alternatives
-% (4) export and XLS to give format in order to export it into latex
+% (1) read the data from XLSX export of qualtrics
+% (2) export an XLS to rename, re-describe and drop variables
+%       -> Uses it to rename, re-describe and drop variables the final
+%       dataset
+% (3) export an XLS to translate the alternatives
+%       -> Uses it to translate the alternatives
+% (4) export an XLS to give format in order to export the questionnaire into latex
+%       -> Uses it to create a latex file with the questionnaire
 %
 %   *(2) and (4) create different variable descriptions: first one for the
 % matlab table (used in plots), second one for the latex version of the
@@ -16,6 +20,13 @@ function data=readQualtricsExport(xlsxfile,varargin)
 % FOR EXPORTING THE DATA FROM QUALTRICS.
 %   TSV y CSV are complicated beacuse there are "commas" and "tabs" in
 %   questions and answers. Use XLSX!
+%   Check the "advance option" to export select multiple answeres into
+%   multiple columns
+%
+%   Warning: sometimes qualtrics export two variables with the same name.
+%   On those cases matlab put the original name on the description, so
+%   actual descriptions do not appear in the table.
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % FOR THE XLS of (2):
 %   First row is ID
@@ -50,7 +61,10 @@ originalQuestionDescriptions=false;
 
 deleteAnonymousSurveys=true;
 doNotConvertToCat={};
+dropVars={};
 printLatex=false;
+useSubsetOfDict=false;
+addVars=cell(0,2);% Rows are independent vars. Column 1 is name. Column 2 is the value (same for each obs!)
 
 
 % Elije si quiere traducir opciones de "select one" questions
@@ -68,6 +82,8 @@ workedFileQuestLatex=[rawFileQuestLatex(1:end-4),'_worked.xls'];
 workedSheetQuestLatex='Translation'; % 'Sheet1', 'Translation'
 workedFileSelectOne=[rawFileSelectOne(1:end-4),'_worked.xls'];
 workedSheetSelectOne='Sheet1'; % 'Sheet1', 'Translation'
+
+selectOneFileInput=false;
 
 
 % Where to save the latex code (without preample) [leave blank if no
@@ -87,10 +103,20 @@ if(~isempty(varargin))
                 originalQuestionDescriptions= varargin{2};
             case {'filedictionary'}
                 workedFileQuestTable= varargin{2};
+            case {'filetranslationselectone'}
+                workedFileSelectOne= varargin{2};
+                selectOneFileInput=true;
             case {'donotconverttocat'}
                 doNotConvertToCat= varargin{2};
             case {'printlatex'}
                 printLatex= varargin{2};
+            case {'dropvars'}
+                dropVars= varargin{2};
+            case {'addvars'}
+                addVars= varargin{2};
+            case {'usesubsetofdict'}
+                useSubsetOfDict= varargin{2};
+
 
             otherwise
                 error(['Unexpected option: ' varargin{1}])
@@ -101,16 +127,19 @@ end
 
 if(exist(xlsxfile, 'file') == 2)
 
-    data=readtable(xlsxfile,'FileType','spreadsheet','VariableNamesRange','A1','VariableDescriptionsRange','A2','DataRange','A3','VariableNamingRule', 'preserve');
+    data=readtable(xlsxfile,'FileType','spreadsheet','VariableNamesRange',1,'VariableDescriptionsRange',2,'DataRange','A3','VariableNamingRule', 'preserve');
 else
 
     error('\nNo se encontro el archivo:\n\n %s\n\nPor favor ingrese otro, gracias!',xlsxfile)
 
 end
 
+
+
 %% Clean anonymus:
 
 data=renamevars(data,"Duration (in seconds)",'durationInSec');
+%[data.Properties.VariableNames',data.Properties.VariableDescriptions']
 
 % Check if any come from anonymus link:
 if(deleteAnonymousSurveys)
@@ -123,6 +152,16 @@ if(deleteAnonymousSurveys)
     end
 end
 
+% Drop vars:
+for v=1:length(dropVars)
+data.(dropVars{v})=[];
+end
+
+% Add vars:
+for v=1:size(addVars,1)
+    assert(not(ismember(addVars{v,1},data.Properties.VariableNames)))
+    data.(addVars{v,1})=scalarForTable(addVars{v,2},data);
+end
 
 %% Variable dropping and name changing:
 
@@ -134,22 +173,44 @@ auxT.drop=scalarForTable(0,auxT);
 auxT.desc=data.Properties.VariableDescriptions';
 auxT.newDesc=scalarForTable({''},auxT);
 
-
-
 writetable(auxT,rawFileQuestTable);
 
-if(isempty(workedFileQuestTable))
-    fileNameFilled=[xlsxfile(1:end-4),'_renameVars_filled.xls'];
-else
-    fileNameFilled=workedFileQuestTable;
-    assert(exist(fileNameFilled, 'file') == 2,sprintf('\nNo se encontro el archivo:\n\n %s\n\nPor favor ingrese otro, gracias!',fileNameFilled))
-end
+fileNameFilled=workedFileQuestTable;
+assert(exist(fileNameFilled, 'file') == 2,sprintf('\nNo se encontro el archivo:\n\n %s\n\nPor favor ingrese otro, gracias!',fileNameFilled))
+
 
 % Import
 if(exist(fileNameFilled, 'file') == 2)
 
     varNames=readtable(fileNameFilled);
+    if(useSubsetOfDict)
+            varNames=varNames(ismember(varNames.varNames,auxT.varNames),:);
+            varNames=sortrows(varNames,'varNames');
+            auxT=sortrows(auxT,'varNames');
+    end
+
+    allIn1=ismember(auxT.varNames,varNames.varNames);
+    if(any(not(allIn1)))
+        fprintf('There are vars in the data that are not in the dictionary. Fix the dictionary (or pre-drop the vars with opt dropVars)\n')
+        varsAux=auxT.varNames(not(allIn1));
+        fprintf('\t%s\n',varsAux{:})
+        error('Se message above')
+    end
+    allIn2=ismember(varNames.varNames,auxT.varNames);
+    if(any(not(allIn2)))
+                fprintf('There are vars in the dictionary that are not in the data. Maybe try opt  ''useSubsetOfDict'',true\n')
+
+        varsAux=varNames.varNames(not(allIn2));
+        fprintf('\t%s\n',varsAux{:})
+               error('Se message above')
+    end
+    
     assert(all(strcmp(varNames.varNames,auxT.varNames)))
+    
+    assert(allunique(varNames.newVarNames(not(ismissing(varNames.newVarNames)))))
+    assert(allunique(varNames.varNames))
+
+
     if(not(iscellstr(varNames.newDesc)))
         varNames.newDesc=mat2cellstr(varNames.newDesc,'wts',0);
     end
@@ -268,6 +329,7 @@ if(translateSelectOne)
 
     alternativas=cell(0,1);
 
+
     if(withQClassification)
         % Alternativa (1)
         for i=1:height(qClassification)
@@ -310,12 +372,18 @@ if(translateSelectOne)
     end
 
 
-    alternativas=unique(alternativas,'stable');
+    [alternativas]=unique(alternativas,'stable');
+
+
     blank=repmat({''},length(alternativas),1);
     writecell([{'options','translation'};[alternativas blank]],rawFileSelectOne)
     % Lee las traducciones
-    if(exist(workedFileSelectOne,'file')>0)
-        alternativeTranslation=readtable(workedFileSelectOne,'Sheet',workedSheetSelectOne,'FileType','spreadsheet','VariableNamesRange','A1','DataRange','A2');
+
+    if(selectOneFileInput)
+        assert(exist(workedFileSelectOne, 'file') == 2,sprintf('\nNo se encontro el archivo:\n\n %s\n\nPor favor ingrese otro, gracias!',workedFileSelectOne))
+        withAlternativeTranslation=true;
+    elseif(exist(workedFileSelectOne,'file')==2)
+
         withAlternativeTranslation=true;
     else
         withAlternativeTranslation=false;
@@ -324,6 +392,36 @@ if(translateSelectOne)
 end
 
 if(withAlternativeTranslation)
+
+    alternativeTranslation=readtable(workedFileSelectOne,'Sheet',workedSheetSelectOne,'FileType','spreadsheet','VariableNamesRange','A1','DataRange','A2');
+
+     % Check that files contains all of them:
+     missingOpts={};
+     
+    for i=1:length(categoricalVars)
+
+        % Get the options
+        alternatives=categories(data.(categoricalVars{i}));
+        [esta]=ismember(alternatives,alternativeTranslation.options);
+      
+        if(not(all(esta)))
+
+            fprintf('No hay traduccion para alternativas de la pregunta %s \n',categoricalVars{i})
+            fprintf('\t%s\n',alternatives{:})
+            fprintf('\n')
+            missingOpts=[missingOpts;alternatives(not(esta))]; %#ok<AGROW> 
+    
+            
+        end
+   
+    end
+    if(not(isempty(missingOpts)))
+        missingOpts=unique(missingOpts,'stable');
+       fprintf('%s\n',missingOpts{:})
+            error('Falta traducir alternativas!')
+    end
+
+
     % Translate alternatives
     for i=1:length(categoricalVars)
 
@@ -333,6 +431,11 @@ if(withAlternativeTranslation)
 
         [esta,pos]=ismember(alternatives,alternativeTranslation.options);
         assert(all(esta))
+        if(not(all(esta)))
+            fprintf('%s\n',alternatives{not(esta)})
+            error('Falta traducir alternativas!')
+
+        end
         translatedAlternatives=alternativeTranslation.translation(pos);
 
         data.(categoricalVars{i})=renamecats(data.(categoricalVars{i}),alternatives,translatedAlternatives);

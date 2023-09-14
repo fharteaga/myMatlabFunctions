@@ -1,5 +1,6 @@
 function [frec,unicos,tabla]=tab(vector,varargin)
 
+% unicos es string pq es el label de "crosstab.m".
 %% Reviso el input
 % Default values
 
@@ -12,7 +13,7 @@ withWeights=false;
 
 
 if(~isempty(varargin))
-   varargin=checkVarargin(varargin);
+    varargin=checkVarargin(varargin);
     % Loading optional arguments
     while ~isempty(varargin)
         switch lower(varargin{1})
@@ -29,7 +30,7 @@ if(~isempty(varargin))
                 sortByFreq=varargin{2};
             case {'forceprint','fp'}
                 forcePrint=varargin{2};
-           case {'ommitnan','ommitmissing'}
+            case {'ommitnan','ommitmissing'}
                 includeMissing=not(varargin{2});
             otherwise
                 error(['Unexpected option: ' varargin{1}])
@@ -41,7 +42,7 @@ end
 if(withWeights)
     assert(all(weights-floor(weights)==0),'Weights must be frequency weights (i.e. integers)')
     vector=repelem(vector,weights);
-  
+
 end
 
 isLogical=islogical(vector);
@@ -51,13 +52,15 @@ isCellstr=iscellstr(vector);
 isString=isstring(vector);
 isDatetime=isdatetime(vector);
 
+classVector=class(vector);
+
 if(isNumeric||isLogical)
     vector=reshape(full(double(vector)),numel(vector),1);
 elseif(isCategorical||isCellstr||isString||isDatetime)
     vector=reshape(vector,numel(vector),1);
     % Saca categorias no usadas
     if(isCategorical)
-    vector=removecats(vector);
+        vector=removecats(vector);
     end
 else
     error('What type is the vector????')
@@ -76,18 +79,18 @@ if(anyNotMissing)
     if(isNumeric)
         % Not doing that anymore. Displaying doubles as strings is way
         % better because it never converts to scientific notation.
-       %preT2= str2double(preT2);
+        %preT2= str2double(preT2);
     elseif(isLogical)
         % No importa, pq no pueden haber NaNs en un logical
     end
     t.value=preT2;
     t.freq=preT1;
-    
+
 end
 
 if(cantMissing>0&&includeMissing)
     tm=table;
-    
+
     if(isNumeric)
         %tm.value=nan;
         tm.value={'NaN'};
@@ -103,7 +106,7 @@ if(cantMissing>0&&includeMissing)
     elseif(isDatetime)
         tm.value={'NaT'};
     end
-    
+
     tm.freq=cantMissing;
     if(anyNotMissing)
         t=[t;tm];
@@ -124,7 +127,7 @@ end
 
 if(N>0)
     t.perc=t.freq/N;
-    
+
     if(nargout>0)
         frec=t.freq;
     end
@@ -134,32 +137,32 @@ if(N>0)
     if(nargout>2)
         tabla=t;
     end
-    
+
     if(withBarGraph)
-        
-            bar(categorical(t.value),t.freq)
+
+        bar(categorical(t.value),t.freq)
     end
-    
-    
+
+
     if(withPrintedOutput)
-        
-        
+
+
         % Chequea q no sean muchos:
         cantUnique=height(t);
-        
+
         if(cantUnique>30&&not(forcePrint))
             fprintf('\n')
-            
+
             t_print=sortrows(t,{'freq','value'},{'descend','ascend'});
             t_print=t_print(t_print.freq>t_print.freq(31),:);
             %t_print=sortrows(t_print,'value');
-            
+
             N_print=sum(t_print.freq);
-            
+
             message=sprintf('Showing only %i out of %i unique values (%.1f%% obs, %s of %s)',height(t_print),cantUnique,sum(t_print.perc)*100,mat2cellstr(N_print,'rc',true),mat2cellstr(N,'rc',true));
             cprintf('[.8 0 0]','------------------------------------\n');
             cprintf('*[.8 0 0]','%s\n',message);
-            
+
         else
             if(sortByFreq)
                 t_print=sortrows(t,{'freq','value'},{'descend','ascend'});
@@ -167,7 +170,7 @@ if(N>0)
                 t_print=t;
             end
         end
-        
+
         t_print.cumPerc=cumsum(t_print.perc);
         t_print.perc=char(mat2cellstr(t_print.perc*100,'precision','%5.1f','sufijo','%'));
         t_print.cumPerc=char(mat2cellstr(t_print.cumPerc*100,'precision','%5.1f','sufijo','%'));
@@ -175,23 +178,23 @@ if(N>0)
         t_print.freq=char(mat2cellstr(t_print.freq,'precision',sprintf('%%%ii',1+maxLength)));
         fprintf('\n')
         disp(t_print)
-        
-        
-        
+
+
+
         if(cantMissing>0&&not(includeMissing))
             fprintf('   Unique values: %s \t(+missing not included)\n',mat2cellstr(height(t),'rc',true));
             fprintf('               N: %s \t(+%s missings not included)\n\n',mat2cellstr(N,'rc',true),mat2cellstr(cantMissing,'rc',true));
         else
-            fprintf('            Type: %s  \n',class(vector));
+            fprintf('            Type: %s  \n',classVector);
             fprintf('   Unique values: %s  \n',mat2cellstr(height(t),'rc',true));
             fprintf('               N: %s\n\n',mat2cellstr(N,'rc',true));
         end
-        
+
         if(cantUnique>30&&not(forcePrint))
             cprintf('*[.8 0 0]','%s\n',message);
             cprintf('[.8 0 0]','------------------------------------\n\n');
         end
-        
+
     end
 else
     if(nargout>0)

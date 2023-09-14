@@ -21,8 +21,13 @@ end
 if(istable(input))
     cell=input.Properties.VariableNames;
 else
+    if(ischar(input))
+        assert(ismember(',',input))
+        cell=strsplit(input,',');
+    else
     assert(iscellstr(input)||(isstring(input)));
     cell=input;
+    end
 end
 
 a='';

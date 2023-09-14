@@ -4,9 +4,9 @@ function compareHistograms(vars,varargin)
 % b) A cell of numeric variables
 % c) A cell of a table and chars that represents variables in the table
 
-
+axisH={};
 varLabels='';
-maxLabelLengthFromDescription=20;
+maxLabelLengthFromDescription=30;
 
 if(not(iscell(vars)))
     vars={vars};
@@ -26,7 +26,7 @@ else
                 wVarDesc=true;
                 varLabels{v}=dataAux.Properties.VariableDescriptions{vars{v}};
             end
-            
+
 
             if(not(wVarDesc)||isempty(varLabels{v})||length(varLabels{v})>maxLabelLengthFromDescription)
                 varLabels{v}=vars{v};
@@ -60,7 +60,7 @@ assert(all(numericVar)||all(not(numericVar)))
 numericVars=all(numericVar);
 
 if(cantVars==1)
-    colors=linspecerGrayproof(cantVars,'dispersion',0.2);
+    [colors,colorsAnnotation]=linspecerGrayproof(cantVars,'dispersion',0.2);
 elseif(cantVars==2)
     grey=[1 1 1]*.3;
     colors=linspecerGrayproof(cantVars-1,'dispersion',0.2);
@@ -110,13 +110,18 @@ normalization='probability'; % probability count
 
 ignoreMissing=false;
 withKernelDensity=false;
+ksdensityFunction='pdf'; % 'pdf' or 'cdf'
 withHistogram=true;
 withMean=true;
+withMedian=false;
 withCoeff=true;
 withMeanSE=true;
 kernelWithDifferentAxis=false;
 forceCoefPosFactor=1;
 blackCoefficients=false;
+
+withFractionInBars=false;
+minPercentageToShow=.03;
 
 alphaTest=0.05;
 
@@ -157,13 +162,17 @@ if(~isempty(varargin))
                 kernelWithDifferentAxis=varargin{2};
             case {'withkerneldensity','wkd','wk'}
                 withKernelDensity=varargin{2};
+            case {'ksdensityfunction'}
+                ksdensityFunction=varargin{2};
             case {'withhistogram','wh'}
                 withHistogram=varargin{2};
-            case {'withmean','wm'} % This is bar and coeff
+            case {'withmean','wm','wmean'} % This is bar and coeff
                 withMean=varargin{2};
-            case {'withmeanse','wmse'} % This is bar and coeff
+            case {'withmedian'} % This is bar and coeff
+                withMedian=varargin{2};
+            case {'withmeanse','wmse'}
                 withMeanSE=varargin{2};
-            case {'withcoeff','wc'} % This is bar and coeff
+            case {'withcoeff','wc'}
                 withCoeff=varargin{2};
             case {'forcecoefposfactor'}
                 forceCoefPosFactor=varargin{2};
@@ -171,6 +180,14 @@ if(~isempty(varargin))
                 blackCoefficients=varargin{2};
             case {'normalization'}
                 normalization=varargin{2};
+            case {'withfractioninbars'}
+                withFractionInBars=varargin{2};
+            case {'maxlabellengthfromdescription'}
+                maxLabelLengthFromDescription=varargin{2};
+			case{'axish'}
+				axisH = varargin{2};
+
+                
             otherwise
                 error(['Unexpected option: ' varargin{1}])
         end
@@ -178,10 +195,15 @@ if(~isempty(varargin))
     end
 end
 
+if(isempty(axisH))
+axisH=gca;
+end
+
 if(not(numericVar))
     withKernelDensity=false;
     withHistogram=true;
     withMean=false;
+    withMedian=false;
 end
 
 if(not(edgeBinColor_inInput))
@@ -235,11 +257,13 @@ elseif(numericVars)
         % This gives common edges
         [~,bins]=histcounts(vertcat(vars{:}),nBins);
     else
+        numUniqueValues=length(unique(vars{1}));
         bins=nBins;
     end
 end
 
 meanVars=nan(cantVars,1);
+medianVars=nan(cantVars,1);
 errorMeanVars=nan(cantVars,1);
 
 xKernel=cell(cantVars,1);
@@ -259,8 +283,16 @@ for v=1:cantVars
     if(withHistogram)
         if(numericVars)
             if(overlap)
-                hists{v}= histogram(var,bins,'facecolor',colors(v,:),'facealpha',alpha(v),'edgecolor',edgeBinColor(v,:),'edgealpha',edgealpha(v),'normalization',normalization,'lineWidth',edgeWidth(v),'linestyle',edgeLinestyle{v});
+                if(cantVars==1&&numUniqueValues<bins)
+                    hists{v}= histogram(axisH,var,'facecolor',colors(v,:),'facealpha',alpha(v),'edgecolor',edgeBinColor(v,:),'edgealpha',edgealpha(v),'normalization',normalization,'lineWidth',edgeWidth(v),'linestyle',edgeLinestyle{v});
+
+                else
+                    hists{v}= histogram(axisH,var,bins,'facecolor',colors(v,:),'facealpha',alpha(v),'edgecolor',edgeBinColor(v,:),'edgealpha',edgealpha(v),'normalization',normalization,'lineWidth',edgeWidth(v),'linestyle',edgeLinestyle{v});
+                end
             else
+
+                
+
 
                 Naux=histcounts(var,bins,'normalization',normalization);
                 N{v}=Naux';
@@ -268,7 +300,7 @@ for v=1:cantVars
             end
         else
             if(overlap)
-                hists{v}= histogram(var,'facecolor',colors(v,:),'facealpha',alpha(v),'edgecolor',edgeBinColor(v,:),'edgealpha',edgealpha(v),'normalization',normalization,'lineWidth',edgeWidth(v),'linestyle',edgeLinestyle{v});
+                hists{v}= histogram(axisH,var,'facecolor',colors(v,:),'facealpha',alpha(v),'edgecolor',edgeBinColor(v,:),'edgealpha',edgealpha(v),'normalization',normalization,'lineWidth',edgeWidth(v),'linestyle',edgeLinestyle{v});
             else
                 [Naux,catsAux{v}]=histcounts(var,'normalization',normalization);
                 N{v}=Naux';
@@ -288,17 +320,21 @@ for v=1:cantVars
         errorMeanVars(v)=std(var)/sqrt(length(var));
     end
 
+    if(withMedian)
+        medianVars(v)=median(var);
+    end
+
     % Kernel
     if(withKernelDensity)
-        [fKernel{v},xKernel{v}]=ksdensity(var);
+        [fKernel{v},xKernel{v}]=ksdensity(var,'Function',ksdensityFunction);
         maxValueKernel=max(maxValueKernel,max(fKernel{v}));
 
     end
 end
 
-if(not(overlap))
+if(not(overlap)&&withHistogram)
     if(numericVars)
-        histscBar=bar(bins(1:end-1)',[N{:}],'histc');
+        histscBar=bar(axisH,bins(1:end-1)',[N{:}],'histc');
     else
         % Check that counts are the same for each cat:
         cats=catsAux{1};
@@ -308,9 +344,9 @@ if(not(overlap))
             assert(all(cellfun(@(x,y)strcmp(x,y),cats,catsAux{v})))
         end
 
-        histscBar=bar(1:length(cats),[N{:}],'hist');
-        set(gca,'xtick',1:length(cats));
-        set(gca,'xticklabels',cats);
+        histscBar=bar(axisH,1:length(cats),[N{:}],'hist');
+        set(axisH,'xtick',1:length(cats));
+        set(axisH,'xticklabels',cats);
     end
     %numberOfXTicks=9;
     %space=max(1,round(length(bins)/numberOfXTicks));
@@ -333,17 +369,18 @@ end
 % Plot kernel density
 adjustFactor=1;
 if(withKernelDensity)
+    plotK=cell(cantVars,1);
     for v=1:cantVars
         if(withHistogram&&withKernelDensity)
             adjustFactor=maxValueHist/maxValueKernel;
         end
         if(kernelWithDifferentAxis)
-            yyaxis right
+            yyaxis(axisH,'right')
         end
-        plot(xKernel{v},fKernel{v}*adjustFactor,'color',colors(v,:),'linestyle','-','linewidth',1.5);
-        hold on
+        plotK{v}=plot(axisH,xKernel{v},fKernel{v}*adjustFactor,'color',colors(v,:),'linestyle','-','linewidth',1.5);
+        hold(axisH,'on')
         if(kernelWithDifferentAxis)
-            yyaxis left
+            yyaxis(axisH,'left')
         end
 
     end
@@ -355,7 +392,7 @@ if(numericVars)
     % Make space to put the coefficients
     maxPlot=max(maxValueHist,maxValueKernel*adjustFactor);
     yLim=ylim;
-    ylim([yLim(1) max(yLim(2),1.3*maxPlot)])
+    ylim(axisH,[yLim(1) max(yLim(2),1.3*maxPlot)])
     yLim=ylim;
     limsX=xlim;
 
@@ -363,6 +400,7 @@ if(numericVars)
 else
     relPosData=.5; % This is needed to decide where to put the legend
 end
+
 if(withMean)
     if(cantVars==1)
         heightBeta=maxPlot*1.09-(1-forceCoefPosFactor)*maxPlot;
@@ -379,9 +417,6 @@ if(withMean)
     end
 
     % See were the data is concentrated
-
-
-
     if(smartPosCoef)
         posCoeffsV=nan(cantVars,2);
         orientation=cell(cantVars,1);
@@ -430,31 +465,31 @@ if(withMean)
         orientation=repmat({'E'},cantVars,1);
     end
 
-    if(withMean)
-        for v=1:cantVars
-            meanVar=meanVars(v);
-            se=errorMeanVars(v);
 
-            plot(meanVar*[1 1],[0 yLim(2)],'--','color',colors(v,:))
-            if(withMeanSE)
-                tinvV=tinv((1-alphaTest/2),length(vars{v})-1);
+    for v=1:cantVars
+        meanVar=meanVars(v);
+        se=errorMeanVars(v);
 
-                plot((meanVar+tinvV*se)*[1 1],[0 yLim(2)],':','color',colors(v,:))
-                plot((meanVar-tinvV*se)*[1 1],[0 yLim(2)],':','color',colors(v,:))
-            end
-            if(withCoeff)
-                if(blackCoefficients)
-                    colorCoef=.1*[1 1 1];
-                else
-                    colorCoef=colors(v,:);
-                end
+        plot(meanVar*[1 1],[0 yLim(2)],'--','color',colors(v,:))
+        if(withMeanSE)
+            tinvV=tinv((1-alphaTest/2),length(vars{v})-1);
 
-                annotation2('textbox',posCoeffsV(v,:),orientation{v},'String',sprintf('$\\mu$: $%.3f$\n$\\quad(%.3f)$',meanVar,se),'Interpreter','latex','edgecolor','none','color',colorCoef);
-            end
-
+            plot(axisH,(meanVar+tinvV*se)*[1 1],[0 yLim(2)],':','color',colors(v,:))
+            plot(axisH,(meanVar-tinvV*se)*[1 1],[0 yLim(2)],':','color',colors(v,:))
         end
+        if(withCoeff)
+            if(blackCoefficients)
+                colorCoef=.1*[1 1 1];
+            else
+                colorCoef=colors(v,:);
+            end
+
+            annotation2('textbox',posCoeffsV(v,:),orientation{v},'String',sprintf('$\\mu$: $%.3f$\n$\\quad(%.3f)$',meanVar,se),'Interpreter','latex','edgecolor','none','color',colorCoef,'axisPlot',axisH);
+        end
+
     end
 
+% Add difference between two if vars are 32
     if(cantVars==2)
 
         newVar=[vars{1};vars{2}];
@@ -469,21 +504,34 @@ if(withMean)
         colorCoef=.1*[1 1 1];
 
 
-        annotation2('textbox',posDiff,'E','String',sprintf('$\\Delta$: $%.3f$\n$\\quad(%.3f)$',beta,betaSE),'Interpreter','latex','edgecolor','none','color',colorCoef);
+        annotation2('textbox',posDiff,'E','String',sprintf('$\\Delta$: $%.3f$\n$\\quad(%.3f)$',beta,betaSE),'Interpreter','latex','edgecolor','none','color',colorCoef,'axisPlot',axisH);
 
     end
 end
+
+if(withMedian)
+    for v=1:cantVars
+        medianVar=medianVars(v);
+        plot(axisH,medianVar*[1 1],[0 yLim(2)],'--','color',colors(v,:))
+
+    end
+end
+
 if(withHistogram)
     switch normalization
         case 'probability'
-            ylabel('Fraction')
+            ylabel(axisH,'Fraction')
         case 'count'
-            ylabel('Count')
+            ylabel(axisH,'Count')
         otherwise
             error('aca')
     end
 elseif(withKernelDensity)
-    ylabel('Density')
+    if(strcmpi(ksdensityFunction,'cdf'))
+    ylabel(axisH,'Estimated CDF')
+    else
+        ylabel(axisH,'Estimated PDF')
+    end
 end
 
 
@@ -504,16 +552,39 @@ if(not(isempty(varLabels))&&not(isempty(varLabels{1})))
     else
         locLeg='northeast';
     end
+    if(withHistogram)
     if(overlap)
         legend([hists{:}],varLabels,'interpreter','latex','location',locLeg);
     else
         legend(histscBar,varLabels,'interpreter','latex','location',locLeg);
     end
+    elseif(withKernelDensity)
+    legend([plotK{:}],varLabels,'interpreter','latex','location',locLeg);
+
+    end
 end
 
+if(withFractionInBars&&cantVars==1)
+        percY=hists{1}.Values;
+        if(numericVars(1))
+        xAnnotation=(hists{1}.BinEdges(1:end-1)+hists{1}.BinEdges(2:end))/2;
+        else
+        xAnnotation=1:hists{1}.NumDisplayBins;
+        end
+        for i=1:length(percY)
+            if(percY(i)>minPercentageToShow)
+             
+                  
+                    annotation2('textbox',[xAnnotation(i),percY(i)/2],'o','String',sprintf('%2.0f$\\%%$',percY(i)*100),'Interpreter','latex','edgecolor','none','color',colorsAnnotation(1,:),'axisPlot',axisH);
+                
+            end
+        end
+end
+
+
 if(withKernelDensity&&kernelWithDifferentAxis)
-    yyaxis right
-    ylabel('Density')
+    yyaxis(axisH,'right')
+    ylabel(axisH,'Density')
 end
 hold off
 

@@ -5,9 +5,9 @@ addPreCode=true;
 
 paths=pathsLatex();
 latexPreTexPath=paths.latexPreTexPath;
-latexTempfilesPath=paths.latexTempfilesPath;
+latexFilesPath=paths.latexTempfilesPath;
 latexExecutablePath=paths.latexExecutablePath;
-
+copyPDFTo='';
 
 texFile='tempTexFile';
 
@@ -21,11 +21,13 @@ if(~isempty(varargin))
             case {'addprecode'}
                 addPreCode = varargin{2};
             case {'dirtex'}
-                latexTempfilesPath = varargin{2};
+                latexFilesPath = varargin{2};
             case {'texfile'}
                 texFile = varargin{2};
             case {'createtex'}
                 createTex = varargin{2};
+            case {'copypdfto'}
+                copyPDFTo= varargin{2};
             otherwise
                 error(['Unexpected option: ',varargin{1}])
         end
@@ -33,7 +35,7 @@ if(~isempty(varargin))
     end
 end
 
-ftex=[latexTempfilesPath,texFile,'.tex'];
+ftex=[latexFilesPath,texFile,'.tex'];
 
 if(createTex)
     warning('off','MATLAB:DELETE:FileNotFound')
@@ -62,7 +64,7 @@ if(createTex)
     
 end
 
-fpdf=[latexTempfilesPath,texFile,'.pdf'];delete(fpdf);
+fpdf=[latexFilesPath,texFile,'.pdf'];delete(fpdf);
 
 %% Run PDFLatex
 %
@@ -78,18 +80,22 @@ fprintf('LATEX is running... ');
 % More opts with: !pdftex --help
 
 % Need to change "cd" because if not it can't read figures in subfolders
-system([sprintf('cd %s;',latexTempfilesPath),...
-    sprintf('"%s" -halt-on-error -output-directory="%s" "%s"',latexExecutablePath,latexTempfilesPath,ftex)]); %
+system([sprintf('cd %s;',latexFilesPath),...
+    sprintf('"%s" -halt-on-error -output-directory="%s" "%s"',latexExecutablePath,latexFilesPath,ftex)]); %
 
 
 if(isfile(fpdf))
     %movefile('tempTexFile.pdf',fpdf)
     open(fpdf)
 end
+if(not(isempty(copyPDFTo)))
+    copyfile(fpdf,copyPDFTo)
+    
+end
 warning('off','MATLAB:DELETE:FileNotFound')
-delete([latexTempfilesPath,texFile,'.aux'])
+delete([latexFilesPath,texFile,'.aux'])
 %delete([latexTempfilesPath,texFile,'.log'])
-delete([latexTempfilesPath,texFile,'.out'])
+delete([latexFilesPath,texFile,'.out'])
 warning('on','MATLAB:DELETE:FileNotFound')
 
 

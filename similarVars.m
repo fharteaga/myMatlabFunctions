@@ -28,7 +28,7 @@ else
 end
 
 varsT=tabla.Properties.VariableNames';
-similar=false(length(varsT),1);
+
 
 if(ischar(type))
     if(strcmpi(type,'all'))
@@ -39,25 +39,32 @@ if(ischar(type))
     end
 end
 
+if(not(iscell(pattern))&&not(isstring(pattern)))
+pattern={pattern};
+end
+if(isstring(pattern))
+    pattern=cellstr(pattern);
+end
 
 
-
+similar=false(length(varsT),1);
+for p=1:length(pattern)
 for t=1:length(types)
     type=types{t};
     switch type
         case 's'
-            similar=similar|(startsWith(varsT,pattern,'IgnoreCase',ignoreCase));
+            similar=similar|(startsWith(varsT,pattern{p},'IgnoreCase',ignoreCase));
 
         case 'c'
-            similar=similar|(contains(varsT,pattern,'IgnoreCase',ignoreCase));
+            similar=similar|(contains(varsT,pattern{p},'IgnoreCase',ignoreCase));
 
         case 'e'
-            similar=similar|(endsWith(varsT,pattern,'IgnoreCase',ignoreCase));
+            similar=similar|(endsWith(varsT,pattern{p},'IgnoreCase',ignoreCase));
 
         otherwise
             error('Aca')
 
     end
 end
-
+end
 vars=varsT(similar);

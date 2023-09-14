@@ -6,13 +6,16 @@ withNBar=false;
 yTickLabel='';
 thresholdAnnotation=.01;
 horizontal=false;
-ignoreMissings=true;
+reverseYAxisIfHorizontal=true;
+missingStrategy='omitIfInAnyVar'; %'omitIfInAnyVar', 'omitByVar','none'
 maxLabelXValue=20;
 
 dispersionBarColors=.2;
 sortByGreynessBarColors=true;
 
 legendLocation='southoutside';
+legendBox='on';
+legendColumns=1;
 
 if(~isempty(varargin))
     % This checks a few things, including if there is a struct called "opts"
@@ -32,6 +35,12 @@ if(~isempty(varargin))
                 sortByGreynessBarColors= varargin{2};
             case {'legendlocation'}
                 legendLocation= varargin{2};
+                            case {'legendbox'}
+                legendBox= varargin{2};
+                     case {'legendcolumns'}
+                legendColumns= varargin{2};
+                            case {'missingstrategy'}
+                missingStrategy= varargin{2};
                 
             otherwise
                 error(['Unexpected option: ',varargin{1}])
@@ -40,27 +49,52 @@ if(~isempty(varargin))
     end
 end
 
-if(ignoreMissings)
-% Check missings
-ignore=any(ismissing(tabla(:,vars)),2);
-    if(any(ignore))
-        cprintf('*systemcommand','[barmultiple.m Unofficial Warning] ')
-        cprintf('systemcommand','%.2f %% of obervations (%i of %i) are used in the plot\n',(1-mean(ignore))*100,sum(not(ignore)),length(ignore))
-        tabla=tabla(not(ignore),:);
-  
-    end
+cantVars=length(vars);
+
+switch lower(missingStrategy)
+    case 'omitifinanyvar'
+
+        % Check missings
+        ignore=any(ismissing(tabla(:,vars)),2);
+        if(any(ignore))
+
+            cprintf('*systemcommand','[barmultiple.m Unofficial Warning] ')
+            cprintf('systemcommand','%.2f%% of obervations (%i of %i) are used in the plot\n',(1-mean(ignore))*100,sum(not(ignore)),length(ignore))
+
+        end
+        ignore=repmat(ignore,1,cantVars);
+    case 'omitbyvar'
+
+        ignore=false(height(tabla),cantVars);
+        for i=1:cantVars
+            ignore(:,i)=ismissing(tabla.(vars{i}));
+
+        end
+        if(any(ignore,'all'))
+
+            cprintf('*systemcommand','[barmultiple.m Unofficial Warning] ')
+            cprintf('systemcommand','Between %.2f%% and %.2f%% of obervations (between %i and %i, of %i) are used in the plot\n',(1-max(mean(ignore,1)))*100,(1-min(mean(ignore,1)))*100,min(sum(not(ignore),1)),max(sum(not(ignore),1)),length(ignore))
+
+        end
+
+
+    case 'none'
+        % Do nothing
+    otherwise
+        error('Wrong missing strategy')
 end
 
 
-cantVars=length(vars);
+
 cantObs=nan(cantVars,1);
-[~,~,bart]=tab(tabla.(vars{1}),'withprintedoutput',0,'m',0);
+[~,~,bart]=tab(tabla.(vars{1})(~ignore(:,1)),'withprintedoutput',0,'m',0);
 bart.Properties.VariableNames{'perc'}=sprintf('perc%i',1);
 cantObs(1)=sum(bart.freq);
 bart.freq=[];
 
 for i=2:cantVars
-    [~,~,bart_aux]=tab(tabla.(vars{i}),'withprintedoutput',0,'m',0);
+    [~,~,bart_aux]=tab(tabla.(vars{i})(~ignore(:,i)),'withprintedoutput',0,'m',0);
+    
     bart_aux.Properties.VariableNames{'perc'}=sprintf('perc%i',i);
     cantObs(i)=sum(bart_aux.freq);
     bart_aux.freq=[];
@@ -127,7 +161,13 @@ if(withNBar)
 end
 
 if(horizontal)
+    
     br=barh(xsBar,table2array(bart(:,2:end))','stacked', 'FaceColor','flat','FaceAlpha',0.9,'edgeColor','none');
+
+    if(reverseYAxisIfHorizontal)
+    set(gca, 'YDir','reverse')
+    end
+
 else
     br=bar(xsBar,table2array(bart(:,2:end))','stacked', 'FaceColor','flat','FaceAlpha',0.9,'edgeColor','none');
 end
@@ -183,10 +223,15 @@ else
     end
 end
 
-textLegend=categorical(bart.value(end:-1:1));
 
-lgd=legend(br(end:-1:1),textLegend,'location',legendLocation);
 
+if(horizontal)
+    textLegend=categorical(bart.value);
+    lgd=legend(br,textLegend,'location',legendLocation,'box',legendBox,'numColumns',legendColumns);
+else
+    textLegend=categorical(bart.value(end:-1:1));
+    lgd=legend(br(end:-1:1),textLegend,'location',legendLocation,'box',legendBox,'numColumns',legendColumns);
+end
 if(nargout>0)
     barOut=struct;
     barOut.colors=colorsBar;
