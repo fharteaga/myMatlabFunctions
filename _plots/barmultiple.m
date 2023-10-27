@@ -9,6 +9,7 @@ horizontal=false;
 reverseYAxisIfHorizontal=true;
 missingStrategy='omitIfInAnyVar'; %'omitIfInAnyVar', 'omitByVar','none'
 maxLabelXValue=20;
+forceWhiteAnnotations=false;
 
 dispersionBarColors=.2;
 sortByGreynessBarColors=true;
@@ -41,6 +42,10 @@ if(~isempty(varargin))
                 legendColumns= varargin{2};
                             case {'missingstrategy'}
                 missingStrategy= varargin{2};
+                
+			case{'forcewhiteannotations'}
+				forceWhiteAnnotations = varargin{2};
+
                 
             otherwise
                 error(['Unexpected option: ',varargin{1}])
@@ -174,6 +179,10 @@ end
 
 
 [colorsBar,colorsAnnotation]=linspecerGrayproof(height(bart),'dispersion',dispersionBarColors,'sortByGreyness',sortByGreynessBarColors);
+
+if(forceWhiteAnnotations)
+colorsAnnotation(:)=1;
+end
 %colorsBar=rgb2gray(colorsBar);
 for i=1:height(bart)
     br(i).CData = colorsBar(i,:);
@@ -236,6 +245,7 @@ if(nargout>0)
     barOut=struct;
     barOut.colors=colorsBar;
     barOut.colorsAnnotation=colorsAnnotation;
+    barOut.bar=br;
 end
 
 

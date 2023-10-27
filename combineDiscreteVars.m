@@ -70,10 +70,12 @@ if(length(varNames)==2)
 elseif(length(varNames)==3)
     newUnicos=categorical(arrayfun(@(x,y,z)sprintf('%s - %s - %s',x,y,z),categorical(unicos.(varNames{1})),categorical(unicos.(varNames{2})),categorical(unicos.(varNames{3})),'UniformOutput',false));
     varDescription=sprintf('%s - %s - %s',varNames{1},varNames{2},varNames{3});
+elseif(length(varNames)==4)
+    newUnicos=categorical(arrayfun(@(x,y,z,w)sprintf('%s - %s - %s - %s',x,y,z,w),categorical(unicos.(varNames{1})),categorical(unicos.(varNames{2})),categorical(unicos.(varNames{3})),categorical(unicos.(varNames{4})),'UniformOutput',false));
+    varDescription=sprintf('%s - %s - %s - %s',varNames{1},varNames{2},varNames{3},varNames{4});
 else
     error('Programar!')
 end
-
 
 
 varComb=categorical(nan(height(tablaIn),1));

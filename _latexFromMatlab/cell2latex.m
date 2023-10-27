@@ -90,7 +90,7 @@ if(~isempty(varargin))
                 titulo = varargin{2};
             case 'label'
                 label = varargin{2};
-            case 'header'
+            case {'header','headers'}
                 % Ancho puede ser igual a ancho de cellImprimir, o ancho de
                 % cellImprimir más ancho de primeraColumna
                 withHeader=true;
@@ -207,7 +207,7 @@ anyMath=false;
 mathCell={'',''}; % left is the alias for the math, right is the math
 counterMath=0;
 
-for c=1:4
+for c=1:5
     switch c
         case 1
             cellst=cellImprimir;
@@ -238,8 +238,15 @@ for c=1:4
                 cellst={''};
                 continue
             end
+        case 5
+            if(withPanel)
+                cellst=panel(:,2);
+            else
+                cellst={''};
+                continue
+            end
     end
-    
+
     withPotentialMath=contains(cellst,'$');
     anyMath=anyMath||any(withPotentialMath,'all');
     
@@ -277,6 +284,9 @@ for c=1:4
                 primeraColumna=cellst;
             case 4
                 footnote=cellst;
+            case 5
+                panel(:,2)=cellst;
+
         end
     end
 end
@@ -564,10 +574,12 @@ if(conPrimeraColumna)
             header=[repmat({' '},size(header,1),anchoPrimeraColumna),header];
             
         end
+        withUnderline=[false(size(withUnderline,1),anchoPrimeraColumna),withUnderline];
     end
     
     cellImprimir=[primeraColumna,cellImprimir];
-    withUnderline=[false(size(withUnderline,1),anchoPrimeraColumna),withUnderline];
+
+    
 end
 
 % Arregla filas fantasma:

@@ -65,6 +65,7 @@ end
 if(length(whichstats)==1&&length(varsNameToCollapse)>1)
     whichstats=repmat(whichstats,1,length(varsNameToCollapse));
 end
+whichstats=lower(whichstats);
 
 assert(length(whichstats)==length(varsNameToCollapse))
 

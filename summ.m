@@ -12,7 +12,7 @@ if(~isempty(varargin))
         switch lower(varargin{1})
             case {'precision'}
                 precision= varargin{2};
-            case {'details'}
+            case {'details','d'}
                 details= varargin{2};
 
             otherwise

@@ -10,6 +10,7 @@ forcePrint=false;
 includeMissing=true;
 sortByFreq=false;
 withWeights=false;
+maxPrint=30; % if forcePrint==false
 
 
 if(~isempty(varargin))
@@ -30,7 +31,7 @@ if(~isempty(varargin))
                 sortByFreq=varargin{2};
             case {'forceprint','fp'}
                 forcePrint=varargin{2};
-            case {'ommitnan','ommitmissing'}
+            case {'ommitnan','ommitmissing','on','om'}
                 includeMissing=not(varargin{2});
             otherwise
                 error(['Unexpected option: ' varargin{1}])
@@ -150,7 +151,7 @@ if(N>0)
         % Chequea q no sean muchos:
         cantUnique=height(t);
 
-        if(cantUnique>30&&not(forcePrint))
+        if(cantUnique>maxPrint&&not(forcePrint))
             fprintf('\n')
 
             t_print=sortrows(t,{'freq','value'},{'descend','ascend'});
@@ -190,7 +191,7 @@ if(N>0)
             fprintf('               N: %s\n\n',mat2cellstr(N,'rc',true));
         end
 
-        if(cantUnique>30&&not(forcePrint))
+        if(cantUnique>maxPrint&&not(forcePrint))
             cprintf('*[.8 0 0]','%s\n',message);
             cprintf('[.8 0 0]','------------------------------------\n\n');
         end

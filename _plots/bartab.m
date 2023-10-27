@@ -1,4 +1,4 @@
-function bartab(tabla,nameVarX,nameVarY,varargin)
+function barOut=bartab(tabla,nameVarX,nameVarY,varargin)
 
 horz=false; % en progreso, not ready yet
 reverseYAxisIfHorizontal=true;
@@ -13,6 +13,7 @@ legendColumns=1;
 flipColors=false;
 reversYAxis=false;
 colors=[];
+forceWhiteAnnotations=false;
 
 
 if(~isempty(varargin))
@@ -43,6 +44,9 @@ if(~isempty(varargin))
                 colors= varargin{2};
             case {'reversyaxis'}
                 reversYAxis= varargin{2};
+
+			case{'forcewhiteannotations'}
+				forceWhiteAnnotations = varargin{2};
             otherwise
                 error(['Unexpected option: ' varargin{1}])
         end
@@ -208,6 +212,10 @@ else
     [colorsBar,colorsAnnotation]=linspecerGrayproof(height(bart),'dispersion',.2);
 end
 
+if(forceWhiteAnnotations)
+colorsAnnotation(:)=1;
+end
+
 if(flipColors)
     colorsBar=colorsBar(end:-1:1,:);
     colorsAnnotation=colorsAnnotation(end:-1:1,:);
@@ -284,5 +292,10 @@ title(lgd,labelVarY)
 end
 end
 
-
+if(nargout>0)
+    barOut=struct;
+    barOut.colors=colorsBar;
+    barOut.colorsAnnotation=colorsAnnotation;
+    barOut.bar=br;
+end
 

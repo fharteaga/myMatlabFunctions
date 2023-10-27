@@ -6,7 +6,7 @@ function tabla=readtable(file,varargin)
 
 
 
-folderWhereFunctionNameLives='/Applications/MATLAB_R2022b.app/toolbox/matlab/iofun/';
+folderWhereFunctionNameLives='/Applications/MATLAB_R2023a.app/toolbox/matlab/iofun/';
 currentFolder = pwd; % Save original folder
 cd(folderWhereFunctionNameLives); % Change to the folder of the functionName that you WANT to run lives.
 % Now it will no longer see the first functionName, unless it's in the current folder.

@@ -66,6 +66,12 @@ for c=1:cantVars
     
         % CUSTOM FUNCTION:
     elseif(strcmp(currentStat(1:2),'c_'))
+
+        fc=fieldnames(customFunInput);
+        fcl=lower(fc);
+       assert(allunique(fcl))
+        customFunInput=renameIfExists(customFunInput, fc, fcl);
+
         if(length(currentStat)==2)
             customFun=customFunInput;
         else

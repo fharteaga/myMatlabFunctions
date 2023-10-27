@@ -78,7 +78,7 @@ customFun=struct;
 statsCollapse={'sum'};
 
 for i=1:(numTreats-1)
-    stat=sprintf('relSize%i',i);
+    stat=sprintf('relsize%i',i);
     statsCollapse=[statsCollapse,{['c_',stat]}]; %#ok<AGROW>
     varsCollapse=[varsCollapse,{'random_SR'}]; %#ok<AGROW>
     customFun.(stat)=@(x)quantile(x,sum(relativeSize(1:i)));
@@ -98,7 +98,7 @@ for s=1:numStrata
     
     tableToGetMisfits=sortrows(tableToGetMisfits,[stratVars(1:end-(s-1)),'random_SR']);
     tableToGetMisfits.orden_SR=(1:height(tableToGetMisfits))';
-    
+
     tableToGetMisfits=stataCollapse(stratVars(1:end-(s-1)),tableToGetMisfits,{'orden_SR','ones_SR'},{'min','sum'},'mergewithoriginal',true);
     tableToGetMisfits.ordenWithinGroup=tableToGetMisfits.orden_SR-tableToGetMisfits.orden_SR_min+1;
     
@@ -116,7 +116,7 @@ for s=1:numStrata
         tablaNoMisfit.tipo=ones(height(tablaNoMisfit),1);
         
         for i=1:(numTreats-1)
-            stat=sprintf('c_relSize%i',i);
+            stat=sprintf('c_relsize%i',i);
             tablaNoMisfit.tipo=tablaNoMisfit.tipo+double(tablaNoMisfit.random_SR>tablaNoMisfit.(['random_SR_',stat]));
         end
       
@@ -135,6 +135,11 @@ for s=1:numStrata
         tableToGetMisfits=tablaMisfit;
         tableToGetMisfits.isMisfit=[];
     end
+
+    % Chequear que esto está correcto:
+    if(height(tableToGetMisfits)==0)
+        break
+    end
 end
 
 
@@ -143,7 +148,7 @@ if(height(tablaMisfit)>0)
     tablaMisfit.tipo=ones(height(tablaMisfit),1);
     
     for i=1:(numTreats-1)
-        stat=sprintf('relSize%i',i);
+        stat=sprintf('relsize%i',i);
         tablaMisfit.tipo=tablaMisfit.tipo+double(tablaMisfit.random_SR>customFun.(stat)(tablaMisfit.random_SR));
     end
     tablaMisfit.levelStrata=zeros(height(tablaMisfit),1);

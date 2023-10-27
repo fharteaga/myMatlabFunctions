@@ -8,7 +8,7 @@ function printLoopProgress(i,I,varargin)
 datetimeStart=datetime('now');
 for i=1:I
 
-    printLoopProgress(i,I,'datetimeStart',datetimeStart);
+    printLoopProgress(i,I,'datetimeStart',datetimeStart,'interval',round(I/10));
 
 end
 %}
@@ -25,6 +25,8 @@ if(~isempty(varargin))
         switch lower(varargin{1})
             case {'datetimestart'}
                 datetimeStart= varargin{2};
+			case{'interval'}
+				interval = varargin{2};
             otherwise
                 error(['Unexpected option: ' varargin{1}])
         end
@@ -33,7 +35,7 @@ if(~isempty(varargin))
 end
 
 
-if(mod(i,interval)==1||i==I)
+if(mod(i+1,interval)==0||i==I)
     message='Starting iteration';
     datetimeNow=datetime('now');
     datetimeNowString=string(datetimeNow);
