@@ -4,9 +4,10 @@ function patchNum=tessellate(xData,yData,var,varargin)
 
 latlon=true;
 withMap=true;
-tessellationType='hex';
+tessellationType='hex'; % hex, sq, or tri
 stat='count'; % Stat for stataCollapse!!
 numFigures=20; % On the longer side
+widthfigureMeters=nan; % This overrides numFigures. UTM distances are in meter!
 showPlot=true;
 
 if(nargin==2||isempty(var))
@@ -33,6 +34,9 @@ if(~isempty(varargin))
                 numFigures=varargin{2};
             case {'showplot'}
                 showPlot=varargin{2};
+            case{'widthfiguremeters'}
+				widthfigureMeters = varargin{2};
+
             otherwise
                 error(['Unexpected option: ' varargin{1}])
         end
@@ -42,25 +46,7 @@ end
 
 
 if(latlon)
-
-    assert(all(xData<=180)&all(yData<=90))
-    assert(all(xData>=-180)&all(yData>=-90))
-
-    dczone = utmzone(mean(yData,'omitnan'),mean(xData,'omitnan'));
-
-    %        Check how many points are outside zone
-    [latlim,lonlim] = utmzone(dczone);
-    out=yData>latlim(2)|yData<latlim(1)|xData>lonlim(2)|xData<lonlim(1);
-
-    if(any(out))
-        fprintf('%.1f%% of observations are outside main utm zone: %s\n',mean(out)*100,dczone);
-    end
-
-    utmstruct = defaultm('utm');
-    utmstruct.zone = dczone;
-    utmstruct.geoid = wgs84Ellipsoid;
-    utmstruct = defaultm(utmstruct);
-    [xData,yData] = projfwd(utmstruct,yData,xData);
+   [xData,yData,utmstruct] = latLonToUTM(yData,xData);
 end
 
 
@@ -69,7 +55,11 @@ dataTable=array2table([xData,yData,var],'VariableNames',{'x','y','var'});
 x_i=[min(xData),max(xData)];
 y_i=[min(yData),max(yData)];
 
-width=max(diff(x_i/numFigures),diff(y_i/numFigures));
+if(isnan(widthfigureMeters))
+    width=max(diff(x_i/numFigures),diff(y_i/numFigures));
+else
+    width=widthfigureMeters;
+end
 
 
 % Cool related stuff:
@@ -149,9 +139,11 @@ if(showPlot)
 
     if(latlon)
         % convert utm back
-        [v(:,2),v(:,1)] = projinv(utmstruct,v(:,1)*factor,v(:,2)*factor);
+        [v(:,1),v(:,2)] = UTMtoLatLon(v(:,1)*factor,v(:,2)*factor,utmstruct);
+
     else
         v=v*factor;
+        assert(not(withMap),'Cannot print map if cooridnates are not LAT LON')
     end
 
 
@@ -159,6 +151,7 @@ if(showPlot)
     colorbar
 
     if(withMap)
+        
         plotMap
     end
 end

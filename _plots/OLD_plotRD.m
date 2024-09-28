@@ -19,7 +19,6 @@ marker='o';
 withStars=true;
 res_i_pointEstimate=res_i;
 parameterLabel='\beta_{RD}';
-linestyle='-';
 
 quantiles=[.25,.75];
 plotQuantiles=false;
@@ -93,8 +92,6 @@ if(~isempty(varargin))
                 assert(numel(varargin{2})==2)
             case {'plotquantiles'}
                 plotQuantiles= varargin{2};
-            case {'linestyle'}
-                linestyle= varargin{2};
             otherwise
                 error(['Unexpected option: ',varargin{1}])
 
@@ -102,8 +99,6 @@ if(~isempty(varargin))
         varargin(1:2) = [];
     end
 end
-
-
 
 if(isnan(colorBinsreg))
     colorBinsreg=color;
@@ -136,10 +131,10 @@ end
 if(withRDFit)
     hold on;
     if(withLeftRDFit)
-        res.functionLine=fplot(@(x)polyfun(x-cutoff,res_i.beta_p_l),[cutoff-res_i.h_l,cutoff],'color',colorFit,'linewidth',widthRDFit,'LineStyle',linestyle);
+        res.functionLine=fplot(@(x)polyfun(x-cutoff,res_i.beta_p_l),[cutoff-res_i.h_l,cutoff],'color',colorFit,'linewidth',widthRDFit);
     end
     if(withRightRDFit)
-        res.functionLine=fplot(@(x)polyfun(x-cutoff,res_i.beta_p_r),[cutoff,cutoff+res_i.h_r],'color',colorFit,'linewidth',widthRDFit,'LineStyle',linestyle);
+        res.functionLine=fplot(@(x)polyfun(x-cutoff,res_i.beta_p_r),[cutoff,cutoff+res_i.h_r],'color',colorFit,'linewidth',widthRDFit);
     end
     hold off
 end
@@ -239,4 +234,5 @@ end
 
 res.binscatter_l=bl;
 res.binscatter_r=br;
+hold off
 hold off

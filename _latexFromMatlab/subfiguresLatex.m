@@ -1,7 +1,7 @@
 function text=subfiguresLatex(d,varargin)
 
 % Warning!: Latex does not have permission to write in parent directories,
-% so generating a .tex to \include{} in the document in a higher directory
+% so generating a .tex to \input{} in the document in a higher directory
 % will not work, because latex has to generate a ".aux". So keep it in the
 % same or deeper directory than the main.tex
 
@@ -189,20 +189,20 @@ if(export)
     if(~isempty(pos))
 
         file1=file(pos(end)+1:end);
-        fprintf('\n\\include{%s}\n\n',file1);
+        fprintf('\n\\input{%s}\n\n',file1);
 
         if(includeExternalRelativePath)
 
             if(not(endsWith(externalRelativePath,'/')))
                 externalRelativePath= sprintf('%s/',externalRelativePath);
             end
-            fprintf('\\include{%s}\n\n',[externalRelativePath,file1]);
+            fprintf('\\input{%s}\n\n',[externalRelativePath,file1]);
         end
 
         newPos=pos(pos<(pos(end)-1)); % Ve si hay otro "/" (q no está pegado al anterior)
         if(~isempty(newPos))
             file2=file(newPos(end)+1:end);
-            fprintf('\\include{%s}\n\n',file2);
+            fprintf('\\input{%s}\n\n',file2);
 
         end
     end

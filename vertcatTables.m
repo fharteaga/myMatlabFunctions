@@ -4,6 +4,7 @@ fillWithMissing={}; % Fill specific variables that are not common with missing v
 fillAllWithMissing=false; % Fill all variables that are not common with missing values if the variable doesn't exist
 avoidDisplayDiagnosticIfFillMiss=false;
 diagnosticCommonVars=false;
+keepOnlyVars={}; % If empty, then it does nothing.
 
 if(~isempty(varargin))
 
@@ -20,6 +21,9 @@ if(~isempty(varargin))
                 fillAllWithMissing= varargin{2};
             case {'avoiddisplaydiagnosticiffillmiss'}
                 avoidDisplayDiagnosticIfFillMiss= varargin{2};
+			case{'keeponlyvars'}
+				keepOnlyVars = varargin{2};
+
             otherwise
                 error(['Unexpected option: ' varargin{1}])
         end
@@ -28,6 +32,12 @@ if(~isempty(varargin))
 end
 
 C=numel(cellOfTables);
+
+if(numel(keepOnlyVars)>0)
+    for c=1:C
+        cellOfTables{c}=cellOfTables{c}(:,keepOnlyVars);
+    end
+end
 
 if(fillAllWithMissing&&not(avoidDisplayDiagnosticIfFillMiss)||diagnosticCommonVars)
     diagnosticCommonVars=true;

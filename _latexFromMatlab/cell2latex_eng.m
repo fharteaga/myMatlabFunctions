@@ -1,28 +1,27 @@
-function tabla = cell2latex(cellImprimir,varargin)
+function tabla = cell2latex(cellToPrint,varargin)
 
 % Default values
 
-% Requires:
-% \usepackage{booktabs} : básico de tablas
-% \usepackage[flushleft]{threeparttable} : agregar notes
-% \usepackage{adjustbox} : pa auto-size
+% If you compile the .tex, you would need the following extra latex packages:
+% \usepackage{booktabs} : basic tables
+% \usepackage[flushleft]{threeparttable} : add notes
+% \usepackage{adjustbox} : for auto-sizing
 %
-% Para agregar mathmode, agregar entre $ $  (Si una fila tiene dos signos y
-% no para mathmode, va a tirar lo q está entremedio)
+% If you are including any math formula, it should come between "$"s. The formula itself should not include any "$"
 
 %{
-cellImprimir=mat2cellstr(matTable)
+cellToPrint=mat2cellstr(matTable)
 opts=struct;
 opts.title='';
 opts.label='';
 opts.header={};
-opts.primeraColumna={};
+opts.firstColumn={};
 % opts.footnote='';
 % opts.panel={0,''};
 % opts.withAdjust=true;
 % opts.addColumnNumber=true;
-% opts.columnasFantasma=[];
-% opts.filasFantasma=[];
+% opts.spacerColumns=[];
+% opts.spacerRows=[];
 % opts.alignmentFirstCol={'L{3cm}'};
 % 
 % opts.standardErrors={};
@@ -31,20 +30,22 @@ opts.primeraColumna={};
 
 opts.file='';
 
-cell2latex(cellImprimir,'opts',opts)
+cell2latex(cellToPrint,'opts',opts)
 
 %}
+
+% Optional inputs:
 withHeader=false;
 withTopAndBottom=true;
-incluirPValsNote=false;
-agregarColumnasFantasma=false;
-agregarFilasFantasma=false;
-conPrimeraColumna=false;
-useCellFirstColumnAsFirstColumn=false; % firstColumns=cellImprimir(:,1);
-conFootnote=false;
-footNoteType='float'; % float: \floatfoot{\scriptsize ...} or tablenotes: \begin{tablenotes} .. \item .. \end{tablenotes} (la primera es ancho de página y la segunda es ancho de tabla)
+includePValsNote=false;
+addSpacerColumn=false;
+addSpacerRow=false;
+withFirstColumn=false;
+useCellFirstColumnAsFirstColumn=false;
+withFootnote=false;
+footNoteType='float'; % float: \floatfoot{\scriptsize ...} or tablenotes: \begin{tablenotes} .. \item .. \end{tablenotes} (first is page-wide, second is table-wide)
 sizeFootnoteFloat='\footnotesize'; %\footnotesize or \scriptsize
-conStandardErrors=false;
+withStandardErrors=false;
 mergeHeader=true;
 withAdjust=false;
 verticalAdjustParam=2;
@@ -68,7 +69,7 @@ avoidPvalsNote=false; % Avoid adding stars pvals to footnote if stars al added t
 
 fixTitleCase=false;
 
-titulo='';
+title='';
 label='';
 headerStr='\\';
 anchoPrimeraColumna=0;
@@ -77,8 +78,8 @@ footnoteText='';
 export=false;
 printInputLatexCode=true;
 
-assert(iscellstr(cellImprimir),'First input must be a cell string') %#ok<ISCLSTR>
-% assert(iscellstr(cellImprimir)||all(cellfun(@(x)ischar(x)|isstring(x),cellImprimir),"all"),'First input must be a cell string') %#ok<ISCLSTR>
+assert(iscellstr(cellToPrint),'First input must be a cell string') %#ok<ISCLSTR>
+% assert(iscellstr(cellToPrint)||all(cellfun(@(x)ischar(x)|isstring(x),cellToPrint),"all"),'First input must be a cell string') %#ok<ISCLSTR>
 
 
 if(~isempty(varargin))
@@ -87,13 +88,11 @@ if(~isempty(varargin))
     % Loading optional arguments
     while ~isempty(varargin)
         switch lower(varargin{1})
-            case {'titulo','title'}
-                titulo = varargin{2};
+            case {'title','titulo'}
+                title = varargin{2};
             case 'label'
                 label = varargin{2};
-            case {'header','headers'}
-                % Ancho puede ser igual a ancho de cellImprimir, o ancho de
-                % cellImprimir más ancho de primeraColumna
+            case {'header','headers'} % Width can be equal to the width of cellToPrint, or the width of cellToPrint plus the width of firstColumn
                 withHeader=true;
                 header = varargin{2};
                 assert(iscellstr(header)||all(isstring(header),'all'));
@@ -102,7 +101,7 @@ if(~isempty(varargin))
                 if(ischar(footnote))
                     footnote={footnote};
                 end
-                conFootnote=true;
+                withFootnote=true;
                 assert(iscellstr(footnote)||all(isstring(footnote),'all'));
             case {'footnotetype'}
                 footNoteType=varargin{2};
@@ -113,21 +112,20 @@ if(~isempty(varargin))
             case 'contopybottom'
                 withTopAndBottom=varargin{2};
             case {'incluirpvals','incluirpvalsnote'}
-                incluirPValsNote=varargin{2};
-            case {'columnasfantasma','columnafantasma'}
-                % Agrega una columna después de la columna escogida ("0" si es
-                % antes de la columna 1). No considera la "primeraColumna"
-                agregarColumnasFantasma=true;
-                columnasFantasma=varargin{2};
-            case {'filasfantasma','filafantasma'}
-                % Agrega una fila después de la fila escogida ("0" si es
-                % antes de la fila 1).
-                agregarFilasFantasma=true;
-                filasFantasma=varargin{2};
-            case {'primeracolumna','firstcolumn'}
-                conPrimeraColumna=true;
-                primeraColumna=varargin{2};
-                assert(iscellstr(primeraColumna)||all(isstring(primeraColumna),'all'));
+                includePValsNote=varargin{2};
+            case {'spacercolumns','columnasfantasma','columnafantasma'}
+                % Add a spacer (empty column) after the column number in parameter "spacerColumns" ("0" if it is before column 1)
+                % It does not count the firstColumn
+                addSpacerColumn=true;
+                spacerColumns=varargin{2};
+            case {'spacerrows','filasfantasma','filafantasma'}
+                % Add a spacer (empty row) after the row number in parameter "spacerColumns" ("0" if is si before row 1)
+                addSpacerRow=true;
+                spacerRows=varargin{2};
+            case {'firstcolumn','primeracolumna'}
+                withFirstColumn=true;
+                firstColumn=varargin{2};
+                assert(iscellstr(firstColumn)||all(isstring(firstColumn),'all'));
             case{'usecellfirstcolumnasfirstcolumn'}
                 useCellFirstColumnAsFirstColumn = varargin{2};
             case {'alignmentfirstcol'}
@@ -147,7 +145,7 @@ if(~isempty(varargin))
             case {'withadjust','adjust'}
                 withAdjust=varargin{2};
             case {'standarderrors','stderrs','stderr','ses'}
-                conStandardErrors=true;
+                withStandardErrors=true;
                 standardErrors=varargin{2};
             case {'stars'}
                 withStars=true;
@@ -160,9 +158,9 @@ if(~isempty(varargin))
             case {'addcolumnnumbers','addcolumnnumber','addnumber','addnumbers'}
                 addColumnNumber=varargin{2};
             case {'panel','panels'}
-                % Es un cell de (x,2), donde x es la cantidad de paneles.
-                % Primera columna es la posición, segunda el text header del panel.
-                % ("0" si es antes de la fila 1)
+                % x by 2 cell, where "x" is the number of panels
+                % Element of column 1 is the position, of column 2 is the text of the panel.
+                % Position reflects "after row x" (ex: "0" if you want the panel to start right before row 1)
                 panel=varargin{2};
                 if(size(panel,1)>0)
                     withPanel=true;
@@ -174,7 +172,6 @@ if(~isempty(varargin))
             case {'positionparameter'}
                 positionParameter=varargin{2};
                 assert(ischar(positionParameter))
-
             case {'hlinebeforepanel','linebeforepanel'}
                 hlineBeforePanel=varargin{2};
             case {'skiprowbeforepanel'}
@@ -196,11 +193,11 @@ if(~isempty(varargin))
 end
 
 if(useCellFirstColumnAsFirstColumn)
-    assert(not(conPrimeraColumna))
-    assert(size(cellImprimir,2)>1)
-    primeraColumna=cellImprimir(:,1);
-    cellImprimir=cellImprimir(:,2:end);
-    conPrimeraColumna=true;
+    assert(not(withFirstColumn))
+    assert(size(cellToPrint,2)>1)
+    firstColumn=cellToPrint(:,1);
+    cellToPrint=cellToPrint(:,2:end);
+    withFirstColumn=true;
 end
 
 assert(not(contains(label,'_')),'Labels of latex tables cannot contain "_"')
@@ -214,7 +211,7 @@ counterMath=0;
 for c=1:5
     switch c
         case 1
-            cellst=cellImprimir;
+            cellst=cellToPrint;
         case 2
             if(withHeader)
                 if(iscategorical(withHeader))
@@ -226,17 +223,17 @@ for c=1:5
                 continue
             end
         case 3
-            if(conPrimeraColumna)
-                if(iscategorical(primeraColumna))
-                    primeraColumna=cellstr(primeraColumna);
+            if(withFirstColumn)
+                if(iscategorical(firstColumn))
+                    firstColumn=cellstr(firstColumn);
                 end
-                cellst=primeraColumna;
+                cellst=firstColumn;
             else
                 cellst={''};
                 continue
             end
         case 4
-            if(conFootnote)
+            if(withFootnote)
                 cellst=footnote;
             else
                 cellst={''};
@@ -263,12 +260,12 @@ for c=1:5
             math=unique(extractBetween(cellWithMath,'$','$'));
             if(not(isempty(math)))
                 for i=1:length(math)
-                    % Busca si ya existe en el arreglo
+                    % Looks if it's already on the cell
                     [is,pos]=ismember(['$',math{i},'$'],mathCell(:,2));
                     if(is)
                         cellWithMath=replace(cellWithMath,mathCell{pos,2},mathCell{pos,1});
                     else
-                        % Si no exite lo agrega
+                        % If not, it is added
                         counterMath=counterMath+1;
                         mathCell{counterMath,1}=sprintf('..math%i..',counterMath);
                         mathCell{counterMath,2}=['$',math{i},'$'];
@@ -281,11 +278,11 @@ for c=1:5
 
         switch c
             case 1
-                cellImprimir=cellst;
+                cellToPrint=cellst;
             case 2
                 header=cellst;
             case 3
-                primeraColumna=cellst;
+                firstColumn=cellst;
             case 4
                 footnote=cellst;
             case 5
@@ -301,27 +298,26 @@ else
     preFontSizeTable='..comment..';
 end
 
-if(conPrimeraColumna)
-    anchoPrimeraColumna=size(primeraColumna,2);
+if(withFirstColumn)
+    anchoPrimeraColumna=size(firstColumn,2);
 end
 
-% Si viene con header y primera columna, chequea q tipo de info trae el
-% header
-if(withHeader&&conPrimeraColumna)
 
-    if(size(header,2)==(size(cellImprimir,2)+anchoPrimeraColumna))
-        assert(not(size(primeraColumna,1)==(size(cellImprimir,1)+size(header,1))),'El header de 1ra columna viene o en header o en primera columna, pero no ambas')
+if(withHeader&&withFirstColumn)
+
+    if(size(header,2)==(size(cellToPrint,2)+anchoPrimeraColumna))
+        assert(not(size(firstColumn,1)==(size(cellToPrint,1)+size(header,1))),'The header of the 1st column must come either in the header or in the first column, but not both')
         conHeaderPrimeraColumna=true;
         headerPrimeraColumna=header(:,1:anchoPrimeraColumna);
-        header=header(:,size(primeraColumna,2)+1:end);
-    elseif(size(primeraColumna,1)==(size(cellImprimir,1)+size(header,1)))
+        header=header(:,size(firstColumn,2)+1:end);
+    elseif(size(firstColumn,1)==(size(cellToPrint,1)+size(header,1)))
         conHeaderPrimeraColumna=true;
-        headerPrimeraColumna=primeraColumna(1:size(header,1),:);
-        primeraColumna=primeraColumna(size(header,1)+1:end,:);
-    elseif(size(cellImprimir,2)==size(header,2))
+        headerPrimeraColumna=firstColumn(1:size(header,1),:);
+        firstColumn=firstColumn(size(header,1)+1:end,:);
+    elseif(size(cellToPrint,2)==size(header,2))
         conHeaderPrimeraColumna=false;
     else
-        error('Ancho del header tiene que ser igual al array o array más primeraColumna')
+        error('Header width must be equal to the cellToPrint width or (firstColumn + cellToPrint) width')
     end
 
 
@@ -329,25 +325,25 @@ else
     conHeaderPrimeraColumna=false;
 end
 
-if(conPrimeraColumna)
+if(withFirstColumn)
     if(isempty(alignmentFirstCol{1}))
-        alignmentFirstCol=repmat({'l'},1,size(primeraColumna,2));
+        alignmentFirstCol=repmat({'l'},1,size(firstColumn,2));
     else
-        assert(all(size(alignmentFirstCol)==[1,size(primeraColumna,2)]))
+        assert(all(size(alignmentFirstCol)==[1,size(firstColumn,2)]))
     end
 end
 
 if(isnumeric(alignment))
-    alignment=repmat({'r'},1,size(cellImprimir,2));
+    alignment=repmat({'r'},1,size(cellToPrint,2));
 else
-    assert(all(size(alignment)==[1,size(cellImprimir,2)]))
+    assert(all(size(alignment)==[1,size(cellToPrint,2)]))
 end
 
 
 
-% Agrega numeros al header:
+% Add numbers to header:
 if(addColumnNumber)
-    headerNumbers=mat2cellstr(1:size(cellImprimir,2),'withParentheses',true);
+    headerNumbers=mat2cellstr(1:size(cellToPrint,2),'withParentheses',true);
     if(withHeader)
         header=[headerNumbers;header];
         if(conHeaderPrimeraColumna)
@@ -360,26 +356,25 @@ if(addColumnNumber)
 
 end
 
-% Agrega standard errors
-if(conStandardErrors)
-    assert(all(size(standardErrors)==size(cellImprimir)),'Size of standard errors cellMatrix must be the same as mail cellMatrix')
+% Add standard errors:
+if(withStandardErrors)
+    assert(all(size(standardErrors)==size(cellToPrint)),'Size of standard errors matrix must be the same as cellToPrint')
 
 
-    % Cambia a "fantasma" si una fila viene sin nada
-    filaVacia=find(all(ismissing(standardErrors),2))*2;
+    emptyRow=find(all(ismissing(standardErrors),2))*2;
 
-    newCell=cell(size(cellImprimir).*[2,1]);
-    newCell(1:2:end,:)=cellImprimir;
+    newCell=cell(size(cellToPrint).*[2,1]);
+    newCell(1:2:end,:)=cellToPrint;
     newCell(2:2:end,:)=standardErrors;
-    cellImprimir=newCell;
-    if(conPrimeraColumna)
-        newCell=cell(size(primeraColumna).*[2,1]);
-        newCell(1:2:end,:)=primeraColumna;
-        primeraColumna=newCell;
+    cellToPrint=newCell;
+    if(withFirstColumn)
+        newCell=cell(size(firstColumn).*[2,1]);
+        newCell(1:2:end,:)=firstColumn;
+        firstColumn=newCell;
 
-        primeraColumna(filaVacia,1)={'..comment..'};
+        firstColumn(emptyRow,1)={'..comment..'};
     else
-        primeraColumna(filaVacia,1)={'..comment..'};
+        firstColumn(emptyRow,1)={'..comment..'};
     end
 
     if(withStars)
@@ -388,20 +383,18 @@ if(conStandardErrors)
         stars=newCell;
     end
 
-    % Arreglo posiciones que dependen en el numero de fila
 
     if(withPanel)
         for i=1:cantPaneles
             panel{i,1}=panel{i,1}*2;
         end
     end
-    if(agregarFilasFantasma)
-        filasFantasma=2*filasFantasma;
+    if(addSpacerRow)
+        spacerRows=2*spacerRows;
     end
 end
 
-% Veo donde voy a poner underline antes de (potencialmente) poner
-% estrellas:
+% This creates underline for merged header cells:
 if(withHeader)
     [I,J]=size(header);
     withUnderline=false(I,J);
@@ -428,17 +421,17 @@ if(withHeader)
 end
 
 
-% Agrega estrellas
+% Add significance stars
 if(withStars)
-    assert(all(size(stars)==size(cellImprimir)))
+    assert(all(size(stars)==size(cellToPrint)))
     if(not(avoidPvalsNote))
-        incluirPValsNote=true;
+        includePValsNote=true;
     end
 
-    newCell=cell(size(cellImprimir).*[1,2]);
-    newCell(:,1:2:end)=cellImprimir;
+    newCell=cell(size(cellToPrint).*[1,2]);
+    newCell(:,1:2:end)=cellToPrint;
     newCell(:,2:2:end)=stars;
-    cellImprimir=newCell;
+    cellToPrint=newCell;
 
     newCell=cell(size(alignment).*[1,2]);
     newCell(:,1:2:end)=alignment;
@@ -466,39 +459,39 @@ if(withStars)
 
     % Arreglo posiciones que dependen en el numero de columna
 
-    if(agregarColumnasFantasma)
-        columnasFantasma=2*columnasFantasma;
+    if(addSpacerColumn)
+        spacerColumns=2*spacerColumns;
     end
 end
 
 
-% Arregla columnas fantasma:
-if(agregarColumnasFantasma)
-    assert(all(columnasFantasma>=0&columnasFantasma<=size(cellImprimir,2)),'Can''t add a ghost column after a column that doesn''t exist!! ')
-    cantNuevas=length(columnasFantasma);
+% Fix spacer columns
+if(addSpacerColumn)
+    assert(all(spacerColumns>=0&spacerColumns<=size(cellToPrint,2)),"Can't add a spacer column after a column that doesn't exist!!")
+    cantNuevas=length(spacerColumns);
 
     % Veo si la nueva columna quiebra algún underline
     if(withHeader)
         [I,J]=size(header);
         for i=1:I
             for c=1:cantNuevas
-                posF=columnasFantasma(c);
+                posF=spacerColumns(c);
                 if(withStars)
 
                     if(posF>=2&&posF<=J-2)
                         if(all(withUnderline(i,posF-1:posF+2)))
-                            %izq:
-                            if(posF==2||sum(underlineNum(i,1:posF)==underlineNum(i,posF))<=2||ismember(posF-2,columnasFantasma))
+                            %left:
+                            if(posF==2||sum(underlineNum(i,1:posF)==underlineNum(i,posF))<=2||ismember(posF-2,spacerColumns))
                                 withUnderline(i,posF-1:posF)=false;
                             end
-                            %der:
-                            if(posF==J-2||sum(underlineNum(i,posF+1:end)==underlineNum(i,posF+1))<=2||ismember(posF+2,columnasFantasma))
+                            %right:
+                            if(posF==J-2||sum(underlineNum(i,posF+1:end)==underlineNum(i,posF+1))<=2||ismember(posF+2,spacerColumns))
                                 withUnderline(i,posF+1:posF+2)=false;
                             end
                         end
 
                     end
-                    % Si queda solo uno, lo sacamos:
+                    % If there is only one, we take it out
                     if(posF<J&&sum(underlineNum(i,withUnderline(i,:))==underlineNum(i,posF+1))<=2)
                         withUnderline(i,underlineNum(i,:)==underlineNum(i,posF+1))=false;
                     end
@@ -508,15 +501,15 @@ if(agregarColumnasFantasma)
                 else
                     if(posF>=1&&posF<=J-1)
                         if(all(withUnderline(i,posF:posF+1)))
-                            if(posF==1||sum(underlineNum(i,1:posF)==underlineNum(i,posF))<=1||ismember(posF-1,columnasFantasma))
+                            if(posF==1||sum(underlineNum(i,1:posF)==underlineNum(i,posF))<=1||ismember(posF-1,spacerColumns))
                                 withUnderline(i,posF)=false;
                             end
-                            if(posF==J-1||sum(underlineNum(i,posF+1:end)==underlineNum(i,posF+1))<=1||ismember(posF+1,columnasFantasma))
+                            if(posF==J-1||sum(underlineNum(i,posF+1:end)==underlineNum(i,posF+1))<=1||ismember(posF+1,spacerColumns))
                                 withUnderline(i,posF+1)=false;
                             end
                         end
                     end
-                    % Si queda solo uno, lo sacamos:
+                    % If there is only one, we take it out
                     if(posF<J&&sum(underlineNum(i,withUnderline(i,:))==underlineNum(i,posF+1))<=1)
                         withUnderline(i,underlineNum(i,:)==underlineNum(i,posF+1))=false;
                     end
@@ -528,7 +521,7 @@ if(agregarColumnasFantasma)
         end
     end
 
-    newCell=repmat({' '},(size(cellImprimir)+[0,cantNuevas]));
+    newCell=repmat({' '},(size(cellToPrint)+[0,cantNuevas]));
     newAllignment=repmat({'r'},(size(alignment)+[0,cantNuevas]));
     if(withHeader)
         newHeader=repmat({' '},(size(header)+[0,cantNuevas]));
@@ -537,18 +530,18 @@ if(agregarColumnasFantasma)
     posOrig=1;
     posNew=1;
     for i=1:(cantNuevas+1)
-        if(i<=length(columnasFantasma))
-            newEnd=columnasFantasma(i)-posOrig+posNew;
-            newCell(:,posNew:newEnd)=cellImprimir(:,posOrig:columnasFantasma(i));
-            newAllignment(:,posNew:newEnd)=alignment(:,posOrig:columnasFantasma(i));
+        if(i<=length(spacerColumns))
+            newEnd=spacerColumns(i)-posOrig+posNew;
+            newCell(:,posNew:newEnd)=cellToPrint(:,posOrig:spacerColumns(i));
+            newAllignment(:,posNew:newEnd)=alignment(:,posOrig:spacerColumns(i));
             if(withHeader)
-                newHeader(:,posNew:newEnd)=header(:,posOrig:columnasFantasma(i));
-                newWithUnderline(:,posNew:newEnd)=withUnderline(:,posOrig:columnasFantasma(i));
+                newHeader(:,posNew:newEnd)=header(:,posOrig:spacerColumns(i));
+                newWithUnderline(:,posNew:newEnd)=withUnderline(:,posOrig:spacerColumns(i));
             end
-            posNew=columnasFantasma(i)+i+1;
-            posOrig=columnasFantasma(i)+1;
+            posNew=spacerColumns(i)+i+1;
+            posOrig=spacerColumns(i)+1;
         else
-            newCell(:,posNew:end)=cellImprimir(:,posOrig:end);
+            newCell(:,posNew:end)=cellToPrint(:,posOrig:end);
             newAllignment(:,posNew:end)=alignment(:,posOrig:end);
             if(withHeader)
                 newHeader(:,posNew:end)=header(:,posOrig:end);
@@ -556,7 +549,7 @@ if(agregarColumnasFantasma)
             end
         end
     end
-    cellImprimir=newCell;
+    cellToPrint=newCell;
     alignment=newAllignment;
     if(withHeader)
         header=newHeader;
@@ -567,9 +560,9 @@ if(agregarColumnasFantasma)
 
 end
 
-% Agrega la 1ra columna
-if(conPrimeraColumna)
-    assert(size(primeraColumna,1)==size(cellImprimir,1),'Left column need to be the height of the data!');
+% Add first column
+if(withFirstColumn)
+    assert(size(firstColumn,1)==size(cellToPrint,1),'Left column need to be the height of cellToPrint (or header + cellToPrint)');
     if(withHeader)
         if(conHeaderPrimeraColumna)
             header=[headerPrimeraColumna,header];
@@ -581,39 +574,39 @@ if(conPrimeraColumna)
         withUnderline=[false(size(withUnderline,1),anchoPrimeraColumna),withUnderline];
     end
 
-    cellImprimir=[primeraColumna,cellImprimir];
+    cellToPrint=[firstColumn,cellToPrint];
 
 
 end
 
 % Arregla filas fantasma:
-if(agregarFilasFantasma)
-    assert(all(filasFantasma>=0&filasFantasma<=size(cellImprimir,1)),'Can''t add a ghost row after a row that doesn''t exist!! ')
-    cantNuevas=length(filasFantasma);
-    newCell=repmat({' '},(size(cellImprimir)+[cantNuevas,0]));
+if(addSpacerRow)
+    assert(all(spacerRows>=0&spacerRows<=size(cellToPrint,1)),"Can't add a spacer row after a row that doesn't exist!!")
+    cantNuevas=length(spacerRows);
+    newCell=repmat({' '},(size(cellToPrint)+[cantNuevas,0]));
 
     posOrig=1;
     posNew=1;
     for i=1:(cantNuevas+1)
-        if(i<=length(filasFantasma))
-            newEnd=filasFantasma(i)-posOrig+posNew;
-            newCell(posNew:newEnd,:)=cellImprimir(posOrig:filasFantasma(i),:);
+        if(i<=length(spacerRows))
+            newEnd=spacerRows(i)-posOrig+posNew;
+            newCell(posNew:newEnd,:)=cellToPrint(posOrig:spacerRows(i),:);
 
-            posNew=filasFantasma(i)+i+1;
-            posOrig=filasFantasma(i)+1;
+            posNew=spacerRows(i)+i+1;
+            posOrig=spacerRows(i)+1;
         else
-            newCell(posNew:end,:)=cellImprimir(posOrig:end,:);
+            newCell(posNew:end,:)=cellToPrint(posOrig:end,:);
         end
     end
-    cellImprimir=newCell;
+    cellToPrint=newCell;
     if(withPanel)
         for i=1:cantPaneles
-            panel{i,1}=panel{i,1}+sum(filasFantasma<=panel{i,1});
+            panel{i,1}=panel{i,1}+sum(spacerRows<=panel{i,1});
         end
     end
 end
 
-% Arregla el header si va pa multicolumn;
+% Transform header to multi-column if needed:
 if(withHeader)
     [I,J]=size(header);
     headerStr='';
@@ -686,37 +679,7 @@ if(withHeader)
         headerStr=[headerStr,headerStrAux,'\\',cline,newline];
     end
 end
-% Esto pone lineas pero no sé si lo quiero mantner
-if(false)
 
-    cellLinea=cell(1,size(cellImprimir,2));
-    cellLinea(1,2:end)=repmat({''},1,size(cellImprimir,2)-1);
-    cellLinea{1,1}='\midrule %%';
-
-    if(isnumeric(lineasCada))
-
-        linea=(lineasCada+1):(lineasCada+1):(size(cellImprimir,1)+floor(size(cellImprimir,1)/lineasCada)-1);
-
-    else
-
-        vaLinea=false(size(cellImprimir,1)-1,1);
-        for i=1:size(cellImprimir,1)-1
-            if(not(isempty(cellImprimir{i+1,1})||ismember(cellImprimir{i+1,1},{'',' ','  '})))
-                vaLinea(i)=true;
-            end
-        end
-        linea=find(vaLinea)+(1:sum(vaLinea))';
-    end
-    nuevasFilas=1:(size(cellImprimir,1)+length(linea));
-    posInfo=nuevasFilas(not(ismember(nuevasFilas,linea)));
-    cellImprimirNueva=cell(size(cellImprimir)+[length(linea) 0]);
-    cellImprimirNueva(posInfo,:)=cellImprimir;
-
-    cellImprimirNueva(linea,:)=repmat(cellLinea,length(linea),1);
-    cellImprimir=cellImprimirNueva;
-end
-
-numColumnas=size(cellImprimir,2);
 
 % Keep for future sprintf
 string=horzcat('%s ',repmat(' & %s',1,numColumnas-1),' \\\\ \n');
@@ -743,18 +706,18 @@ if(withPanel)
     for c=1:cantPaneles
         posPanel=panel{c,1};
         headerPanel=panel{c,2};
-        assert(all(posPanel>=0&posPanel<=size(cellImprimir,1)),'Can''t add a panel row after a row that doesn''t exist!! ')
+        assert(all(posPanel>=0&posPanel<=size(cellToPrint,1)),'Can''t add a panel row after a row that doesn''t exist!! ')
 
-        newRow=horzcat(skip,'\multicolumn{',sprintf('%i',size(cellImprimir,2)),'}{l}{',bold,'{',headerPanel,'}} \\',newline);
+        newRow=horzcat(skip,'\multicolumn{',sprintf('%i',size(cellToPrint,2)),'}{l}{',bold,'{',headerPanel,'}} \\',newline);
 
-        auxImprimir=cellImprimir(posIni:posPanel,:)';
+        auxImprimir=cellToPrint(posIni:posPanel,:)';
         preTabla=[preTabla,sprintf(string,auxImprimir{:,:}),newRow]; %#ok<AGROW>
         posIni=posPanel+1;
     end
-    auxImprimir=cellImprimir(posIni:end,:)';
+    auxImprimir=cellToPrint(posIni:end,:)';
     preTabla=[preTabla,sprintf(string,auxImprimir{:,:}),];
 else
-    imprimir=cellImprimir';
+    imprimir=cellToPrint';
     preTabla=sprintf(string,imprimir{:,:});
 end
 
@@ -769,12 +732,12 @@ else
 end
 
 preFootnote=''; % footnote is more complex than just adding one commented line...
-if(incluirPValsNote||conFootnote)
+if(includePValsNote||withFootnote)
 
-    if(conFootnote)
+    if(withFootnote)
 
         preFootnote='';
-        if(not(incluirPValsNote))
+        if(not(includePValsNote))
             footnote{1}=['\textit{Notes. }',footnote{1}];
         end
         if(strcmp(footNoteType,'tablenotes'))
@@ -786,7 +749,7 @@ if(incluirPValsNote||conFootnote)
     else
         footnote='';
     end
-    if(incluirPValsNote)
+    if(includePValsNote)
         if(strcmp(footNoteType,'tablenotes'))
             starPValsNote= '\item \textit{Notes. }*** p<0.01, ** p<0.05, * p<0.1. ';
         else
@@ -832,12 +795,12 @@ if(withTopAndBottom)
     end
 
 
-    if(not(isempty(label))||not(isempty(titulo)))% Apparently is mandatory.. apparently not!
-        if(fixTitleCase&&not(isempty(titulo)))
+    if(not(isempty(label))||not(isempty(title)))
+        if(fixTitleCase&&not(isempty(title)))
             apiKey='';
-            titulo=char(pyrunfile(sprintf("titleCaseConverter.py '%s' '%s'",titulo,apiKey),'r'));
+            title=char(pyrunfile(sprintf("titleCaseConverter.py '%s' '%s'",title,apiKey),'r'));
         end
-        tit=['\caption{',titulo,'\label{',label,'}}',newline];
+        tit=['\caption{',title,'\label{',label,'}}',newline];
 
     else
         tit=['..comment..\caption{  \label{  }}',newline];
@@ -943,10 +906,10 @@ if(export)
     fprintf(fid, '%s', tabla);
     fclose(fid);
 
-    % Imprime el codigo pa meter al tex:
+
     if(printInputLatexCode)
         posTex=strfind(file,'.tex');
-        if(~isempty(posTex));file=file(1:posTex(end)-1);end % Texpad alega si tiene .tex!
+        if(~isempty(posTex));file=file(1:posTex(end)-1);end 
 
         % Busca el relative path
 
@@ -954,7 +917,7 @@ if(export)
             file1=file(pos(end)+1:end);
             fprintf('\\input{%s}\n\n',file1);
 
-            newPos=pos(pos<(pos(end)-1)); % Ve si hay otro "/" (q no está pegado al anterior)
+            newPos=pos(pos<(pos(end)-1)); 
             if(~isempty(newPos))
                 file2=file(newPos(end)+1:end);
                 fprintf('\\input{%s}\n\n',file2);
