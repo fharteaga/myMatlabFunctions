@@ -283,7 +283,7 @@ for v=1:cantVars
     if(withHistogram)
         if(numericVars)
             if(overlap)
-                if(cantVars==1&&numUniqueValues<bins)
+                if(cantVars==1&&not(withEdges)&&numUniqueValues<bins)
                     hists{v}= histogram(axisH,var,'facecolor',colors(v,:),'facealpha',alpha(v),'edgecolor',edgeBinColor(v,:),'edgealpha',edgealpha(v),'normalization',normalization,'lineWidth',edgeWidth(v),'linestyle',edgeLinestyle{v});
 
                 else
